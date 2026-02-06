@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import TextType from "./TextType";
 
 // Components
 import Navbar from "components/Navbars/AuthNavbar.js";
@@ -65,12 +66,34 @@ export default function Landing() {
               <div className="w-full lg:w-6/12 px-4 ml-auto mr-auto text-center">
                 <div className="pr-12">
                   <h1 className="text-white font-semibold text-5xl">
-                    Your story starts with us.
-                  </h1>
+  <TextType
+    text={[
+      "Your story starts with us.",
+      "Inscris-toi aujourd'hui et dessine ton avenir avec assurance.",
+    ]}
+    typingSpeed={75}
+    deletingSpeed={50}
+    pauseDuration={2000}
+    showCursor
+    cursorCharacter="_"
+  />
+</h1>
+
                   <p className="mt-4 text-lg text-blueGray-200">
                     "Chaque formation est une passerelle vers de nouvelles opportunites. 
                     Inscrit-toi aujourd'hui et dessine ton avenir avec assurance."
                   </p>
+                  <div>
+                  <Link
+  to="/formations"
+  className="bg-blue-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-600 transition duration-300"
+>
+  <button className="bg-lightBlue-500 text-white active:bg-lightBlue-600 mt-12 font-bold uppercase text-sm px-6 py-3 rounded-full shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150" type="button">
+    Voir les formations
+
+</button>
+</Link>
+</div>
                 </div>
               </div>
             </div>
@@ -273,7 +296,7 @@ export default function Landing() {
                       ></polygon>
                     </svg>
                     <h4 className="text-xl font-bold text-white">
-                      Top Notch Servicesss
+                      Top Notch Services
                     </h4>
                     <p className="text-md font-light mt-2 text-white">
                       The Arctic Ocean freezes every winter and much of the sea-ice then thaws every summer, 
