@@ -51,7 +51,7 @@ et vous recommande les meilleures options selon votre profil.
 
         <img
           className="absolute top-0 b-auto right-0 pt-16 sm:w-6/12 -mt-48 sm:mt-0 w-10/12 max-h-860px"
-          src={require("assets/img/landingjaune.png").default}
+          src={require("assets/img/Backschool.gif").default}
           alt="..."
         />
       </section>

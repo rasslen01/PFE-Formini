@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import TextType from "./TextType";
+import CentreCard from "../components/Cards/CentreCard";
+import RecommendationCard from "../components/Cards/RecommendationCard";
+import StudentNavbar from "components/Navbars/StudentNavbar";
+
+
 
 // Components
-import Navbar from "components/Navbars/AuthNavbar.js";
+// import Navbar from "components/Navbars/AuthNavbar.js";
 import Footer from "components/Footers/Footer.js";
 import SallleDeFormation from "../assets/img/SallleDeFormation.avif";
 
@@ -11,6 +16,7 @@ export default function Landing() {
   // State des filtres
   const [ville, setVille] = useState("");
   const [domaine, setDomaine] = useState("");
+  const [search, setSearch] = useState("");
 
   // Données formations (démo)
   const formations = [
@@ -35,16 +41,36 @@ export default function Landing() {
   ];
 
   // Filtrage des formations
-  const formationsFiltrees = formations.filter(
-    (formation) => 
-      (ville === "" || formation.ville === ville) && 
-      (domaine === "" || formation.domaine === domaine)
+ const formationsFiltrees = formations.filter((formation) => {
+  return (
+    (ville === "" || formation.ville === ville) &&
+    (domaine === "" || formation.domaine === domaine) &&
+    formation.nom.toLowerCase().includes(search.toLowerCase())
   );
+  
 
+});
+
+const recommandations = [
+  {
+    id: 3,
+    nom: "Data Science",
+    ville: "tunis",
+    domaine: "data",
+    score: 92,
+  },
+  {
+    id: 1,
+    nom: "Développement Web",
+    ville: "tunis",
+    domaine: "informatique",
+    score: 88,
+  },
+];
   return (
     <>
       {/* Navbar */}
-      <Navbar transparent />
+<StudentNavbar />
       
       <main>
         {/* Hero Section */}
@@ -124,6 +150,21 @@ export default function Landing() {
         {/* Main Content Section */}
         <section className="pb-20 bg-blueGray-200 -mt-24">
           <div className="container mx-auto px-4">
+            {/* Section Recommandation IA */}
+<div className="mb-12">
+  <h3 className="text-2xl font-bold mb-6 text-center">
+    🎯 Recommandé pour vous
+  </h3>
+
+  <div className="flex flex-wrap">
+    {recommandations.map((formation) => (
+      <div key={formation.id} className="w-full md:w-6/12 px-4 mb-4">
+        <RecommendationCard formation={formation} />
+      </div>
+    ))}
+  </div>
+</div>
+
             {/* Filters Row */}
             <div className="flex flex-wrap">
               
@@ -220,6 +261,16 @@ export default function Landing() {
                   </div>
                 </div>
               </div>
+              <div className="w-full mb-6">
+  <input
+    type="text"
+    placeholder="Rechercher une formation..."
+    className="w-full border p-3 rounded shadow"
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+  />
+</div>
+
             </div>
 
             {/* Formations Results */}
@@ -235,20 +286,11 @@ export default function Landing() {
                   </p>
                 ) : (
                   formationsFiltrees.map((formation) => (
-                    <div 
-                      key={formation.id} 
-                      className="w-full md:w-4/12 px-4 mb-4"
-                    >
-                      <div className="bg-white shadow-lg rounded-lg p-4">
-                        <h5 className="font-bold">
-                          {formation.nom}
-                        </h5>
-                        <p className="text-blueGray-500">
-                          {formation.ville} — {formation.domaine}
-                        </p>
-                      </div>
-                    </div>
-                  ))
+  <div key={formation.id} className="w-full md:w-4/12 px-4 mb-4">
+    <CentreCard formation={formation} />
+  </div>
+))
+
                 )}
               </div>
             </div>
@@ -407,179 +449,7 @@ export default function Landing() {
         </section> */}
 
         {/* Team Section */}
-        <section className="pt-20 pb-48">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-wrap justify-center text-center mb-24">
-              <div className="w-full lg:w-6/12 px-4">
-                <h2 className="text-4xl font-semibold">
-                  Here are our heroes
-                </h2>
-                <p className="text-lg leading-relaxed m-4 text-blueGray-500">
-                  According to the National Oceanic and Atmospheric Administration, 
-                  Ted, Scambos, NSIDClead scentist, puts the potentially record maximum.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap">
-              {/* Team Member 1 */}
-              <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
-                <div className="px-6">
-                  <img 
-                    alt="..." 
-                    src={require("assets/img/team-1-800x800.jpg").default} 
-                    className="shadow-lg rounded-full mx-auto max-w-120-px" 
-                  />
-                  <div className="pt-6 text-center">
-                    <h5 className="text-xl font-bold">
-                      Ryan Tompson
-                    </h5>
-                    <p className="mt-1 text-sm text-blueGray-400 uppercase font-semibold">
-                      Web Developer
-                    </p>
-                    <div className="mt-6">
-                      <button 
-                        className="bg-lightBlue-400 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-twitter"></i>
-                      </button>
-                      <button 
-                        className="bg-lightBlue-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-facebook-f"></i>
-                      </button>
-                      <button 
-                        className="bg-pink-500 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-dribbble"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Team Member 2 */}
-              <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
-                <div className="px-6">
-                  <img 
-                    alt="..." 
-                    src={require("assets/img/team-2-800x800.jpg").default} 
-                    className="shadow-lg rounded-full mx-auto max-w-120-px" 
-                  />
-                  <div className="pt-6 text-center">
-                    <h5 className="text-xl font-bold">
-                      Romina Hadid
-                    </h5>
-                    <p className="mt-1 text-sm text-blueGray-400 uppercase font-semibold">
-                      Marketing Specialist
-                    </p>
-                    <div className="mt-6">
-                      <button 
-                        className="bg-red-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-google"></i>
-                      </button>
-                      <button 
-                        className="bg-lightBlue-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-facebook-f"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Team Member 3 */}
-              <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
-                <div className="px-6">
-                  <img 
-                    alt="..." 
-                    src={require("assets/img/team-3-800x800.jpg").default} 
-                    className="shadow-lg rounded-full mx-auto max-w-120-px" 
-                  />
-                  <div className="pt-6 text-center">
-                    <h5 className="text-xl font-bold">
-                      Alexa Smith
-                    </h5>
-                    <p className="mt-1 text-sm text-blueGray-400 uppercase font-semibold">
-                      UI/UX Designer
-                    </p>
-                    <div className="mt-6">
-                      <button 
-                        className="bg-red-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-google"></i>
-                      </button>
-                      <button 
-                        className="bg-lightBlue-400 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-twitter"></i>
-                      </button>
-                      <button 
-                        className="bg-blueGray-700 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-instagram"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Team Member 4 */}
-              <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
-                <div className="px-6">
-                  <img 
-                    alt="..." 
-                    src={require("assets/img/team-4-470x470.png").default} 
-                    className="shadow-lg rounded-full mx-auto max-w-120-px" 
-                  />
-                  <div className="pt-6 text-center">
-                    <h5 className="text-xl font-bold">
-                      Jenna Kardi
-                    </h5>
-                    <p className="mt-1 text-sm text-blueGray-400 uppercase font-semibold">
-                      Founder and CEO
-                    </p>
-                    <div className="mt-6">
-                      <button 
-                        className="bg-pink-500 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-dribbble"></i>
-                      </button>
-                      <button 
-                        className="bg-red-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-google"></i>
-                      </button>
-                      <button 
-                        className="bg-lightBlue-400 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-twitter"></i>
-                      </button>
-                      <button 
-                        className="bg-blueGray-700 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1" 
-                        type="button"
-                      >
-                        <i className="fab fa-instagram"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+      
 
         {/* Services Section */}
         <section className="pb-20 relative block bg-blueGray-800">
