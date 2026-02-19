@@ -1,132 +1,268 @@
+// src/views/Landing.js
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import TextType from "./TextType";
-import CentreCard from "../components/Cards/CentreCard";
 import RecommendationCard from "../components/Cards/RecommendationCard";
 import StudentNavbar from "components/Navbars/StudentNavbar";
-
-
-
-// Components
-// import Navbar from "components/Navbars/AuthNavbar.js";
 import Footer from "components/Footers/Footer.js";
 import SallleDeFormation from "../assets/img/SallleDeFormation.avif";
+import { useFavorites } from "../FavoritesContext";
+import FavoriteButton from "../components/Button/FavoriteButton";
 
 export default function Landing() {
-  // State des filtres
+  const { favoritesCount } = useFavorites();
+
   const [ville, setVille] = useState("");
   const [domaine, setDomaine] = useState("");
   const [search, setSearch] = useState("");
 
-  // Données formations (démo)
   const formations = [
-    { 
-      id: 1, 
-      nom: "Développement Web", 
-      ville: "tunis", 
-      domaine: "informatique" 
+    {
+      id: 1,
+      nom: "Développement Web Full Stack",
+      ville: "tunis",
+      domaine: "informatique",
+      description:
+        "Maîtrisez HTML, CSS, JavaScript, React et Node.js pour créer des applications web complètes et modernes.",
+      prix: 450,
+      duree: "3 mois",
+      nbEtudiants: 128,
+      rating: 4.8,
+      formateur: "Ahmed Benali",
+      niveau: "Intermédiaire",
     },
-    { 
-      id: 2, 
-      nom: "Marketing Digital", 
-      ville: "sfax", 
-      domaine: "marketing" 
+    {
+      id: 2,
+      nom: "Marketing Digital & Réseaux Sociaux",
+      ville: "sfax",
+      domaine: "marketing",
+      description:
+        "Apprenez à créer des campagnes marketing efficaces sur Facebook, Instagram, Google Ads et plus encore.",
+      prix: 300,
+      duree: "2 mois",
+      nbEtudiants: 95,
+      rating: 4.6,
+      formateur: "Sara Moussaoui",
+      niveau: "Débutant",
     },
-    { 
-      id: 3, 
-      nom: "Data Science", 
-      ville: "tunis", 
-      domaine: "data" 
+    {
+      id: 3,
+      nom: "Data Science & Machine Learning",
+      ville: "tunis",
+      domaine: "data",
+      description:
+        "Explorez Python, Pandas, TensorFlow et les algorithmes de Machine Learning pour analyser des données massives.",
+      prix: 550,
+      duree: "4 mois",
+      nbEtudiants: 76,
+      rating: 4.9,
+      formateur: "Karim Tazi",
+      niveau: "Avancé",
+    },
+    {
+      id: 4,
+      nom: "Intelligence Artificielle Appliquée",
+      ville: "sousse",
+      domaine: "ia",
+      description:
+        "Découvrez le Deep Learning, le NLP et la vision par ordinateur avec des projets pratiques.",
+      prix: 600,
+      duree: "4 mois",
+      nbEtudiants: 54,
+      rating: 4.7,
+      formateur: "Mohamed Sahli",
+      niveau: "Avancé",
+    },
+    {
+      id: 5,
+      nom: "Développement Mobile React Native",
+      ville: "ariana",
+      domaine: "mobile",
+      description:
+        "Créez des applications mobiles iOS et Android avec React Native et déployez-les sur les stores.",
+      prix: 0,
+      gratuit: true,
+      duree: "2 mois",
+      nbEtudiants: 142,
+      rating: 4.5,
+      formateur: "Ines Ben Amor",
+      niveau: "Intermédiaire",
+    },
+    {
+      id: 6,
+      nom: "Réseaux & Cybersécurité",
+      ville: "bizerte",
+      domaine: "reseaux",
+      description:
+        "Apprenez la configuration réseau, la sécurité informatique et préparez la certification CCNA.",
+      prix: 400,
+      duree: "3 mois",
+      nbEtudiants: 63,
+      rating: 4.4,
+      formateur: "Ali Hammami",
+      niveau: "Intermédiaire",
     },
   ];
 
-  // Filtrage des formations
- const formationsFiltrees = formations.filter((formation) => {
-  return (
-    (ville === "" || formation.ville === ville) &&
-    (domaine === "" || formation.domaine === domaine) &&
-    formation.nom.toLowerCase().includes(search.toLowerCase())
-  );
-  
+  const recommandations = [
+    {
+      id: 3,
+      nom: "Data Science & Machine Learning",
+      ville: "tunis",
+      domaine: "data",
+      score: 92,
+      description: "Explorez Python, Pandas, TensorFlow...",
+      prix: 550,
+      rating: 4.9,
+    },
+    {
+      id: 1,
+      nom: "Développement Web Full Stack",
+      ville: "tunis",
+      domaine: "informatique",
+      score: 88,
+      description: "Maîtrisez HTML, CSS, JavaScript, React...",
+      prix: 450,
+      rating: 4.8,
+    },
+  ];
 
-});
+  var getImage = function (domaine) {
+    var images = {
+      informatique:
+        "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&q=80",
+      marketing:
+        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&q=80",
+      data: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80",
+      mobile:
+        "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=500&q=80",
+      ia: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=500&q=80",
+      reseaux:
+        "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=500&q=80",
+    };
+    return (
+      images[domaine] ||
+      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&q=80"
+    );
+  };
 
-const recommandations = [
-  {
-    id: 3,
-    nom: "Data Science",
-    ville: "tunis",
-    domaine: "data",
-    score: 92,
-  },
-  {
-    id: 1,
-    nom: "Développement Web",
-    ville: "tunis",
-    domaine: "informatique",
-    score: 88,
-  },
-];
+  var getColor = function (domaine) {
+    var colors = {
+      informatique: "#3b82f6",
+      marketing: "#8b5cf6",
+      data: "#10b981",
+      mobile: "#ec4899",
+      ia: "#f59e0b",
+      reseaux: "#ef4444",
+    };
+    return colors[domaine] || "#0ea5e9";
+  };
+
+  var getIcon = function (domaine) {
+    var icons = {
+      informatique: "fas fa-laptop-code",
+      marketing: "fas fa-bullhorn",
+      data: "fas fa-chart-bar",
+      mobile: "fas fa-mobile-alt",
+      ia: "fas fa-robot",
+      reseaux: "fas fa-network-wired",
+    };
+    return icons[domaine] || "fas fa-book";
+  };
+
+  var getVilleName = function (ville) {
+    var names = {
+      tunis: "Tunis",
+      ariana: "Ariana",
+      sfax: "Sfax",
+      sousse: "Sousse",
+      bizerte: "Bizerte",
+      monastir: "Monastir",
+      nabeul: "Nabeul",
+      ben_arous: "Ben Arous",
+      manouba: "Manouba",
+    };
+    return names[ville] || ville || "";
+  };
+
+  const formationsFiltrees = formations.filter((formation) => {
+    return (
+      (ville === "" || formation.ville === ville) &&
+      (domaine === "" || formation.domaine === domaine) &&
+      formation.nom.toLowerCase().includes(search.toLowerCase())
+    );
+  });
+
   return (
     <>
-      {/* Navbar */}
-<StudentNavbar />
-      
+      <StudentNavbar transparent />
+
       <main>
-        {/* Hero Section */}
+        {/* ===== HERO ===== */}
         <div className="relative pt-16 pb-32 flex content-center items-center justify-center min-h-screen-75">
-          <div 
+          <div
             className="absolute top-0 w-full h-full bg-center bg-cover"
-            style={{ 
-              backgroundImage: "url('https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1267&q=80')" 
+            style={{
+              backgroundImage:
+                "url('https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-1.2.1&auto=format&fit=crop&w=1267&q=80')",
             }}
           >
-            <span 
-              id="blackOverlay" 
-              className="w-full h-full absolute opacity-75 bg-black"
-            ></span>
+            <span className="w-full h-full absolute opacity-75 bg-black"></span>
           </div>
-          
+
           <div className="container relative mx-auto">
             <div className="items-center flex flex-wrap">
               <div className="w-full lg:w-6/12 px-4 ml-auto mr-auto text-center">
                 <div className="pr-12">
                   <h1 className="text-white font-semibold text-5xl">
-  <TextType
-    text={[
-      "Your story starts with us.",
-      "Inscris-toi aujourd'hui et dessine ton avenir avec assurance.",
-    ]}
-    typingSpeed={75}
-    deletingSpeed={50}
-    pauseDuration={2000}
-    showCursor
-    cursorCharacter="_"
-  />
-</h1>
+                    <TextType
+                      text={[
+                        "Trouvez votre formation idéale.",
+                        "Développez vos compétences.",
+                        "Construisez votre avenir.",
+                      ]}
+                      typingSpeed={75}
+                      deletingSpeed={50}
+                      pauseDuration={2000}
+                      showCursor
+                      cursorCharacter="_"
+                    />
+                  </h1>
 
                   <p className="mt-4 text-lg text-blueGray-200">
-                    "Chaque formation est une passerelle vers de nouvelles opportunites. 
-                    Inscrit-toi aujourd'hui et dessine ton avenir avec assurance."
+                    Explorez des centaines de formations professionnelles à
+                    travers toute la Tunisie. Inscrivez-vous et développez vos
+                    compétences dès aujourd'hui.
                   </p>
-                  <div>
-                  <Link
-  to="/formations"
-  className="bg-blue-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-600 transition duration-300"
->
-  <button className="bg-lightBlue-500 text-white active:bg-lightBlue-600 mt-12 font-bold uppercase text-sm px-6 py-3 rounded-full shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150" type="button">
-    Voir les formations
 
-</button>
-</Link>
-</div>
+                  <div className="flex flex-wrap justify-center gap-4 mt-12">
+                    <Link
+                      to="/mes-inscriptions"
+                      className="bg-lightBlue-500 text-white font-bold uppercase text-sm px-8 py-4 rounded-full shadow-lg hover:bg-lightBlue-600 hover:shadow-xl transition-all duration-150"
+                    >
+                      <i className="fas fa-graduation-cap mr-2"></i>
+                      Mes inscriptions
+                    </Link>
+
+                    <Link
+                      to="/liste-favoris"
+                      className="relative bg-red-500 text-white font-bold uppercase text-sm px-8 py-4 rounded-full shadow-lg hover:bg-red-600 hover:shadow-xl transition-all duration-150"
+                    >
+                      <i className="fas fa-heart mr-2"></i>
+                      Mes favoris
+                      {favoritesCount > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-yellow-400 text-blueGray-800 text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+                          {favoritesCount}
+                        </span>
+                      )}
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          
-          {/* Wave Divider */}
-          <div 
+
+          <div
             className="top-auto bottom-0 left-0 right-0 w-full absolute pointer-events-none overflow-hidden h-70-px"
             style={{ transform: "translateZ(0)" }}
           >
@@ -136,8 +272,6 @@ const recommandations = [
               preserveAspectRatio="none"
               version="1.1"
               viewBox="0 0 2560 100"
-              x="0"
-              y="0"
             >
               <polygon
                 className="text-blueGray-200 fill-current"
@@ -147,202 +281,678 @@ const recommandations = [
           </div>
         </div>
 
-        {/* Main Content Section */}
+        {/* ===== MAIN CONTENT ===== */}
         <section className="pb-20 bg-blueGray-200 -mt-24">
-          <div className="container mx-auto px-4">
-            {/* Section Recommandation IA */}
-<div className="mb-12">
-  <h3 className="text-2xl font-bold mb-6 text-center">
-    🎯 Recommandé pour vous
-  </h3>
-
-  <div className="flex flex-wrap">
-    {recommandations.map((formation) => (
-      <div key={formation.id} className="w-full md:w-6/12 px-4 mb-4">
-        <RecommendationCard formation={formation} />
-      </div>
-    ))}
-  </div>
-</div>
-
-            {/* Filters Row */}
-            <div className="flex flex-wrap">
-              
-              {/* Ville Filter */}
-              <div className="lg:pt-12 pt-6 w-full md:w-4/12 px-4 text-center">
-                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
-                  <div className="container mt-4">
-                    <div className="card shadow-sm p-3" style={{ maxWidth: "400px" }}>
-                      <h6 className="mb-2 text-center">
-                        Trouver des formations selon la localisation
-                      </h6>
-                      <select 
-                        className="form-select" 
-                        aria-label="Default select example"
-                        onChange={(e) => setVille(e.target.value)}
-                        defaultValue=""
-                      >
-                        <option value="">Choisir l'état</option>
-                        <option value="tunis">Tunis</option>
-                        <option value="ariana">Ariana</option>
-                        <option value="ben_arous">Ben Arous</option>
-                        <option value="manouba">Manouba</option>
-                        <option value="nabeul">Nabeul</option>
-                        <option value="zaghouan">Zaghouan</option>
-                        <option value="bizerte">Bizerte</option>
-                        <option value="beja">Béja</option>
-                        <option value="jendouba">Jendouba</option>
-                        <option value="kef">Le Kef</option>
-                        <option value="siliana">Siliana</option>
-                        <option value="sousse">Sousse</option>
-                        <option value="monastir">Monastir</option>
-                        <option value="mahdia">Mahdia</option>
-                        <option value="sfax">Sfax</option>
-                        <option value="kairouan">Kairouan</option>
-                        <option value="kasserine">Kasserine</option>
-                        <option value="sidi_bouzid">Sidi Bouzid</option>
-                        <option value="gabes">Gabès</option>
-                        <option value="medenine">Médenine</option>
-                        <option value="tataouine">Tataouine</option>
-                        <option value="gafsa">Gafsa</option>
-                        <option value="tozeur">Tozeur</option>
-                        <option value="kebili">Kébili</option>
-                      </select>
-                    </div>
+          <div className="max-w-7xl mx-auto px-6">
+            {/* ===== STATS ===== */}
+            <div className="flex flex-wrap -mt-4">
+              <div className="w-full md:w-4/12 px-4">
+                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg p-6 text-center transform hover:-translate-y-1 transition-all duration-300">
+                  <div className="text-lightBlue-500 p-3 text-center inline-flex items-center justify-center w-16 h-16 mb-4 shadow-lg rounded-full bg-lightBlue-50 mx-auto">
+                    <i className="fas fa-book-open text-2xl"></i>
                   </div>
-                </div>
-              </div>
-
-              {/* Domaine Filter */}
-              <div className="w-full md:w-4/12 px-4 text-center">
-                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
-                  <div className="card shadow-sm p-3" style={{ maxWidth: "400px" }}>
-                    <h6 className="mb-2 text-center">
-                      Choisir le domaine de formation
-                    </h6>
-                    <select 
-                      className="form-select" 
-                      aria-label="Default select example"
-                      onChange={(e) => setDomaine(e.target.value)}
-                      defaultValue=""
-                    >
-                      <option value="">Choisir le domaine</option>
-                      <option value="informatique">Informatique & IT</option>
-                      <option value="reseaux">Réseaux & Télécom</option>
-                      <option value="ia">Intelligence Artificielle</option>
-                      <option value="data">Data Science</option>
-                      <option value="web">Développement Web</option>
-                      <option value="mobile">Développement Mobile</option>
-                      <option value="gestion">Gestion & Management</option>
-                      <option value="marketing">Marketing Digital</option>
-                      <option value="finance">Finance & Comptabilité</option>
-                      <option value="langues">Langues</option>
-                      <option value="bureautique">Bureautique</option>
-                      <option value="mecanique">Mécanique</option>
-                      <option value="electrique">Électricité</option>
-                      <option value="electronique">Électronique</option>
-                      <option value="sante">Santé</option>
-                      <option value="paramedical">Paramédical</option>
-                      <option value="artisanat">Artisanat</option>
-                      <option value="tourisme">Tourisme & Hôtellerie</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Date Filter */}
-              <div className="pt-6 w-full md:w-4/12 px-4 text-center">
-                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
-                  <div className="card shadow-sm p-3 mb-3" style={{ maxWidth: "400px" }}>
-                    <h6 className="text-center mb-2">
-                      Choisir la date
-                    </h6>
-                    <input type="date" className="form-control" />
-                  </div>
-                </div>
-              </div>
-              <div className="w-full mb-6">
-  <input
-    type="text"
-    placeholder="Rechercher une formation..."
-    className="w-full border p-3 rounded shadow"
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-  />
-</div>
-
-            </div>
-
-            {/* Formations Results */}
-            <div className="container mx-auto px-4 mt-8">
-              <h3 className="text-2xl font-semibold mb-4 text-center">
-                Formations disponibles
-              </h3>
-              
-              <div className="flex flex-wrap">
-                {formationsFiltrees.length === 0 ? (
-                  <p className="text-center w-full">
-                    Aucune formation trouvée
+                  <h5 className="text-3xl font-bold text-blueGray-800">
+                    {formations.length}+
+                  </h5>
+                  <p className="text-sm text-blueGray-500 mt-1">
+                    Formations disponibles
                   </p>
-                ) : (
-                  formationsFiltrees.map((formation) => (
-  <div key={formation.id} className="w-full md:w-4/12 px-4 mb-4">
-    <CentreCard formation={formation} />
-  </div>
-))
+                </div>
+              </div>
 
-                )}
+              <div className="w-full md:w-4/12 px-4">
+                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg p-6 text-center transform hover:-translate-y-1 transition-all duration-300">
+                  <div className="text-emerald-500 p-3 text-center inline-flex items-center justify-center w-16 h-16 mb-4 shadow-lg rounded-full bg-emerald-50 mx-auto">
+                    <i className="fas fa-map-marked-alt text-2xl"></i>
+                  </div>
+                  <h5 className="text-3xl font-bold text-blueGray-800">24</h5>
+                  <p className="text-sm text-blueGray-500 mt-1">
+                    Gouvernorats couverts
+                  </p>
+                </div>
+              </div>
+
+              <div className="w-full md:w-4/12 px-4">
+                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg p-6 text-center transform hover:-translate-y-1 transition-all duration-300">
+                  <div className="text-red-500 p-3 text-center inline-flex items-center justify-center w-16 h-16 mb-4 shadow-lg rounded-full bg-red-50 mx-auto">
+                    <i className="fas fa-users text-2xl"></i>
+                  </div>
+                  <h5 className="text-3xl font-bold text-blueGray-800">
+                    558+
+                  </h5>
+                  <p className="text-sm text-blueGray-500 mt-1">
+                    Étudiants inscrits
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* About Section */}
+            {/* ===== RECOMMANDATIONS IA ===== */}
+            <div className="mb-12 mt-8">
+              <div className="text-center mb-8">
+                <span className="text-sm font-bold uppercase text-lightBlue-500 tracking-wider">
+                  Intelligence Artificielle
+                </span>
+                <h3 className="text-3xl font-bold text-blueGray-800 mt-2">
+                  🎯 Recommandé pour vous
+                </h3>
+                <p className="text-blueGray-500 mt-2">
+                  Basé sur votre profil et vos intérêts
+                </p>
+              </div>
+
+              <div className="flex flex-wrap">
+                {recommandations.map((formation) => (
+                  <div
+                    key={formation.id}
+                    className="w-full md:w-6/12 px-4 mb-4"
+                  >
+                    <RecommendationCard formation={formation} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ===== FILTRES ===== */}
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+              <h3 className="text-xl font-bold text-blueGray-800 mb-6 flex items-center">
+                <i className="fas fa-filter text-lightBlue-500 mr-3"></i>
+                Filtrer les formations
+              </h3>
+
+              <div className="flex flex-wrap -mx-2">
+                <div className="w-full md:w-4/12 px-2 mb-4">
+                  <label className="block text-xs font-bold uppercase text-blueGray-500 mb-2">
+                    <i className="fas fa-search mr-1"></i> Rechercher
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Nom de la formation..."
+                      className="w-full border border-blueGray-200 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-lightBlue-500 focus:border-transparent text-sm transition-all"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                    <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-blueGray-400"></i>
+                  </div>
+                </div>
+
+                <div className="w-full md:w-3/12 px-2 mb-4">
+                  <label className="block text-xs font-bold uppercase text-blueGray-500 mb-2">
+                    <i className="fas fa-map-marker-alt mr-1"></i> Gouvernorat
+                  </label>
+                  <select
+                    className="w-full border border-blueGray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-lightBlue-500 text-sm bg-white"
+                    onChange={(e) => setVille(e.target.value)}
+                    value={ville}
+                  >
+                    <option value="">Tous les gouvernorats</option>
+                    <option value="tunis">Tunis</option>
+                    <option value="ariana">Ariana</option>
+                    <option value="ben_arous">Ben Arous</option>
+                    <option value="manouba">Manouba</option>
+                    <option value="nabeul">Nabeul</option>
+                    <option value="zaghouan">Zaghouan</option>
+                    <option value="bizerte">Bizerte</option>
+                    <option value="beja">Béja</option>
+                    <option value="jendouba">Jendouba</option>
+                    <option value="kef">Le Kef</option>
+                    <option value="siliana">Siliana</option>
+                    <option value="sousse">Sousse</option>
+                    <option value="monastir">Monastir</option>
+                    <option value="mahdia">Mahdia</option>
+                    <option value="sfax">Sfax</option>
+                    <option value="kairouan">Kairouan</option>
+                    <option value="kasserine">Kasserine</option>
+                    <option value="sidi_bouzid">Sidi Bouzid</option>
+                    <option value="gabes">Gabès</option>
+                    <option value="medenine">Médenine</option>
+                    <option value="tataouine">Tataouine</option>
+                    <option value="gafsa">Gafsa</option>
+                    <option value="tozeur">Tozeur</option>
+                    <option value="kebili">Kébili</option>
+                  </select>
+                </div>
+
+                <div className="w-full md:w-3/12 px-2 mb-4">
+                  <label className="block text-xs font-bold uppercase text-blueGray-500 mb-2">
+                    <i className="fas fa-layer-group mr-1"></i> Domaine
+                  </label>
+                  <select
+                    className="w-full border border-blueGray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-lightBlue-500 text-sm bg-white"
+                    onChange={(e) => setDomaine(e.target.value)}
+                    value={domaine}
+                  >
+                    <option value="">Tous les domaines</option>
+                    <option value="informatique">Informatique & IT</option>
+                    <option value="reseaux">Réseaux & Télécom</option>
+                    <option value="ia">Intelligence Artificielle</option>
+                    <option value="data">Data Science</option>
+                    <option value="web">Développement Web</option>
+                    <option value="mobile">Développement Mobile</option>
+                    <option value="gestion">Gestion & Management</option>
+                    <option value="marketing">Marketing Digital</option>
+                    <option value="finance">Finance & Comptabilité</option>
+                    <option value="langues">Langues</option>
+                    <option value="sante">Santé</option>
+                    <option value="tourisme">Tourisme & Hôtellerie</option>
+                  </select>
+                </div>
+
+                <div className="w-full md:w-2/12 px-2 mb-4 flex items-end">
+                  <button
+                    onClick={() => {
+                      setVille("");
+                      setDomaine("");
+                      setSearch("");
+                    }}
+                    className="w-full bg-blueGray-100 text-blueGray-600 font-bold text-sm px-4 py-3 rounded-lg hover:bg-blueGray-200 transition-all"
+                  >
+                    <i className="fas fa-redo mr-2"></i>
+                    Réinitialiser
+                  </button>
+                </div>
+              </div>
+
+              {(ville || domaine || search) && (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-blueGray-500">
+                    Filtres actifs :
+                  </span>
+                  {search && (
+                    <span className="bg-lightBlue-100 text-lightBlue-700 text-xs px-3 py-1 rounded-full flex items-center">
+                      "{search}"
+                      <button
+                        onClick={() => setSearch("")}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {ville && (
+                    <span className="bg-emerald-100 text-emerald-700 text-xs px-3 py-1 rounded-full flex items-center">
+                      📍 {ville}
+                      <button
+                        onClick={() => setVille("")}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {domaine && (
+                    <span className="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full flex items-center">
+                      🏷️ {domaine}
+                      <button
+                        onClick={() => setDomaine("")}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ===== FORMATIONS ===== */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-blueGray-800">
+                  <i className="fas fa-book-open text-lightBlue-500 mr-2"></i>
+                  Formations disponibles
+                </h3>
+                <span className="bg-lightBlue-100 text-lightBlue-700 text-sm font-bold px-4 py-2 rounded-full">
+                  {formationsFiltrees.length} résultat
+                  {formationsFiltrees.length > 1 ? "s" : ""}
+                </span>
+              </div>
+
+              {formationsFiltrees.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto">
+                    <div style={{ fontSize: "48px", marginBottom: "16px" }}>
+                      🔍
+                    </div>
+                    <h4 className="text-xl font-bold text-blueGray-800 mb-2">
+                      Aucune formation trouvée
+                    </h4>
+                    <button
+                      onClick={() => {
+                        setVille("");
+                        setDomaine("");
+                        setSearch("");
+                      }}
+                      className="bg-lightBlue-500 text-white font-bold text-sm px-6 py-3 rounded-lg hover:bg-lightBlue-600 transition-all"
+                    >
+                      Réinitialiser les filtres
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap">
+                  {formationsFiltrees.map(function (formation, index) {
+                    return (
+                      <div
+                        key={formation.id}
+                        className="w-full lg:w-4/12 px-4"
+                        style={{
+                          animation:
+                            "fadeInUp 0.5s ease-out " +
+                            index * 0.1 +
+                            "s both",
+                        }}
+                      >
+                        {/* Carte avec titre DEDANS */}
+                        <div className="hover:-mt-4 relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg ease-linear transition-all duration-150 overflow-hidden group">
+                          {/* Titre dans la carte */}
+                          <div
+                            style={{
+                              padding: "14px 16px 10px",
+                              borderBottom: "1px solid #f1f5f9",
+                            }}
+                          >
+                            <Link
+                              to={
+                                "/centre/" +
+                                (formation._id || formation.id)
+                              }
+                              style={{ textDecoration: "none" }}
+                            >
+                              <h5
+                                style={{
+                                  fontSize: "15px",
+                                  fontWeight: "bold",
+                                  color: "#1e293b",
+                                  margin: 0,
+                                  textAlign: "center",
+                                  transition: "color 0.2s",
+                                  cursor: "pointer",
+                                }}
+                                className="group-hover:text-lightBlue-600"
+                              >
+                                {formation.nom}
+                              </h5>
+                            </Link>
+                          </div>
+
+                          {/* Image */}
+                          <div
+                            style={{
+                              position: "relative",
+                              height: "180px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <img
+                              alt={formation.nom}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                              src={getImage(formation.domaine)}
+                            />
+
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background:
+                                  "linear-gradient(to top, rgba(0,0,0,0.6), transparent)",
+                              }}
+                            ></div>
+
+                            {/* Badge domaine */}
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: "10px",
+                                left: "10px",
+                                backgroundColor: getColor(
+                                  formation.domaine
+                                ),
+                                color: "white",
+                                fontSize: "10px",
+                                fontWeight: "bold",
+                                padding: "4px 10px",
+                                borderRadius: "20px",
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              <i
+                                className={getIcon(formation.domaine)}
+                                style={{ marginRight: "4px" }}
+                              ></i>
+                              {formation.domaine}
+                            </span>
+
+                            {/* Bouton Favori ❤️ */}
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: "10px",
+                                right: "10px",
+                                zIndex: 10,
+                              }}
+                            >
+                              <FavoriteButton
+                                formation={formation}
+                                size="sm"
+                              />
+                            </div>
+
+                            {/* Prix */}
+                            <span
+                              style={{
+                                position: "absolute",
+                                bottom: "10px",
+                                right: "10px",
+                                backgroundColor:
+                                  formation.prix === 0 ||
+                                  formation.gratuit
+                                    ? "#10b981"
+                                    : "#1e293b",
+                                color: "white",
+                                fontSize: "13px",
+                                fontWeight: "bold",
+                                padding: "4px 12px",
+                                borderRadius: "20px",
+                              }}
+                            >
+                              {formation.prix === 0 || formation.gratuit
+                                ? "Gratuit"
+                                : formation.prix + " DT"}
+                            </span>
+
+                            {/* Niveau */}
+                            {formation.niveau && (
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  bottom: "10px",
+                                  left: "10px",
+                                  backgroundColor:
+                                    formation.niveau === "Débutant"
+                                      ? "#10b981"
+                                      : formation.niveau ===
+                                        "Intermédiaire"
+                                      ? "#f59e0b"
+                                      : "#ef4444",
+                                  color: "white",
+                                  fontSize: "10px",
+                                  fontWeight: "bold",
+                                  padding: "3px 8px",
+                                  borderRadius: "20px",
+                                }}
+                              >
+                                {formation.niveau}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Contenu */}
+                          <div style={{ padding: "14px 16px" }}>
+                            {/* Description */}
+                            {formation.description && (
+                              <p
+                                style={{
+                                  fontSize: "12px",
+                                  color: "#94a3b8",
+                                  marginBottom: "10px",
+                                  lineHeight: "1.5",
+                                  overflow: "hidden",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                }}
+                              >
+                                {formation.description}
+                              </p>
+                            )}
+
+                            {/* Tags */}
+                            <div
+                              style={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: "6px",
+                                marginBottom: "10px",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontSize: "11px",
+                                  color: "#64748b",
+                                  backgroundColor: "#f1f5f9",
+                                  padding: "3px 8px",
+                                  borderRadius: "20px",
+                                }}
+                              >
+                                📍 {getVilleName(formation.ville)}
+                              </span>
+                              {formation.duree && (
+                                <span
+                                  style={{
+                                    fontSize: "11px",
+                                    color: "#64748b",
+                                    backgroundColor: "#f1f5f9",
+                                    padding: "3px 8px",
+                                    borderRadius: "20px",
+                                  }}
+                                >
+                                  ⏱ {formation.duree}
+                                </span>
+                              )}
+                              {formation.nbEtudiants && (
+                                <span
+                                  style={{
+                                    fontSize: "11px",
+                                    color: "#64748b",
+                                    backgroundColor: "#f1f5f9",
+                                    padding: "3px 8px",
+                                    borderRadius: "20px",
+                                  }}
+                                >
+                                  👥 {formation.nbEtudiants}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Note + Formateur */}
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginBottom: "12px",
+                                paddingBottom: "10px",
+                                borderBottom: "1px solid #f1f5f9",
+                              }}
+                            >
+                              {formation.rating && (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  {[1, 2, 3, 4, 5].map(function (star) {
+                                    return (
+                                      <span
+                                        key={star}
+                                        style={{
+                                          color:
+                                            star <=
+                                            Math.floor(
+                                              formation.rating
+                                            )
+                                              ? "#facc15"
+                                              : "#e2e8f0",
+                                          fontSize: "11px",
+                                        }}
+                                      >
+                                        ★
+                                      </span>
+                                    );
+                                  })}
+                                  <span
+                                    style={{
+                                      fontSize: "11px",
+                                      color: "#94a3b8",
+                                      marginLeft: "4px",
+                                    }}
+                                  >
+                                    {formation.rating}
+                                  </span>
+                                </div>
+                              )}
+                              {formation.formateur && (
+                                <span
+                                  style={{
+                                    fontSize: "11px",
+                                    color: "#94a3b8",
+                                  }}
+                                >
+                                  🎓 {formation.formateur}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Boutons */}
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "8px",
+                              }}
+                            >
+                              <Link
+                                to={
+                                  "/centre/" +
+                                  (formation._id || formation.id)
+                                }
+                                style={{
+                                  flex: 1,
+                                  textAlign: "center",
+                                  backgroundColor: "#0ea5e9",
+                                  color: "white",
+                                  fontWeight: "bold",
+                                  fontSize: "11px",
+                                  textTransform: "uppercase",
+                                  padding: "8px",
+                                  borderRadius: "6px",
+                                  textDecoration: "none",
+                                }}
+                              >
+                                <i
+                                  className="fas fa-eye"
+                                  style={{ marginRight: "4px" }}
+                                ></i>
+                                Détails
+                              </Link>
+                              <Link
+                                to={
+                                  "/inscription/" +
+                                  (formation._id || formation.id)
+                                }
+                                style={{
+                                  textAlign: "center",
+                                  backgroundColor: "#10b981",
+                                  color: "white",
+                                  fontWeight: "bold",
+                                  fontSize: "11px",
+                                  textTransform: "uppercase",
+                                  padding: "8px 12px",
+                                  borderRadius: "6px",
+                                  textDecoration: "none",
+                                }}
+                              >
+                                <i
+                                  className="fas fa-pen"
+                                  style={{ marginRight: "4px" }}
+                                ></i>
+                                S'inscrire
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* ===== ABOUT ===== */}
             <div className="flex flex-wrap items-center mt-32">
               <div className="w-full md:w-5/12 px-4 mr-auto ml-auto">
                 <div className="text-blueGray-500 p-3 text-center inline-flex items-center justify-center w-16 h-16 mb-6 shadow-lg rounded-full bg-white">
                   <i className="fas fa-user-friends text-xl"></i>
                 </div>
                 <h3 className="text-3xl mb-2 font-semibold leading-normal">
-                  Working with us is a pleasure
+                  Pourquoi nous choisir ?
                 </h3>
                 <p className="text-lg font-light leading-relaxed mt-4 mb-4 text-blueGray-600">
-                  Don't let your uses guess by attaching tooltips and popoves to any element. 
-                  Just make sure you enable them first via JavaScript.
+                  Notre plateforme vous connecte avec les meilleures formations
+                  professionnelles en Tunisie. Un système intelligent de
+                  recommandation vous guide vers les formations adaptées à votre
+                  profil.
                 </p>
-                <p className="text-lg font-light leading-relaxed mt-0 mb-4 text-blueGray-600">
-                  The kit comes with three pre-built pages to help you get started faster. 
-                  You can change the text and images and you're good to go. 
-                  Just make sure you enable them first via JavaScript.
-                </p>
-                <Link to="/" className="font-bold text-blueGray-700 mt-8">
-                  Check Notus React!
-                </Link>
+
+                <ul className="list-none mt-6">
+                  <li className="py-2 flex items-center">
+                    <span className="text-emerald-500 mr-3">
+                      <i className="fas fa-check-circle"></i>
+                    </span>
+                    <span className="text-blueGray-600">
+                      Recommandations personnalisées par IA
+                    </span>
+                  </li>
+                  <li className="py-2 flex items-center">
+                    <span className="text-emerald-500 mr-3">
+                      <i className="fas fa-check-circle"></i>
+                    </span>
+                    <span className="text-blueGray-600">
+                      Formations certifiantes dans 24 gouvernorats
+                    </span>
+                  </li>
+                  <li className="py-2 flex items-center">
+                    <span className="text-emerald-500 mr-3">
+                      <i className="fas fa-check-circle"></i>
+                    </span>
+                    <span className="text-blueGray-600">
+                      Suivi de progression et tableau de bord
+                    </span>
+                  </li>
+                </ul>
               </div>
-              
+
               <div className="w-full md:w-4/12 px-4 mr-auto ml-auto">
                 <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded-lg bg-lightBlue-500">
-                  <img 
-                    alt="..." 
+                  <img
+                    alt="Salle de formation"
                     src={SallleDeFormation}
-                    className="w-full align-middle rounded-t-lg" 
+                    className="w-full align-middle rounded-t-lg"
                   />
                   <blockquote className="relative p-8 mb-4">
-                    <svg 
-                      preserveAspectRatio="none" 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      viewBox="0 0 583 95" 
+                    <svg
+                      preserveAspectRatio="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 583 95"
                       className="absolute left-0 w-full block h-95-px -top-94-px"
                     >
-                      <polygon 
-                        points="-30,95 583,95 583,65" 
+                      <polygon
+                        points="-30,95 583,95 583,65"
                         className="text-lightBlue-500 fill-current"
                       ></polygon>
                     </svg>
                     <h4 className="text-xl font-bold text-white">
-                      Top Notch Services
+                      Formations de qualité
                     </h4>
                     <p className="text-md font-light mt-2 text-white">
-                      The Arctic Ocean freezes every winter and much of the sea-ice then thaws every summer, 
-                      and that process will continue whatever happens.
+                      Des formateurs experts, des contenus à jour et un
+                      accompagnement personnalisé pour votre réussite
+                      professionnelle.
                     </p>
                   </blockquote>
                 </div>
@@ -351,109 +961,9 @@ const recommandations = [
           </div>
         </section>
 
-        {/* Features Section */}
-        {/* <section className="relative py-20">
-          <div 
-            className="bottom-auto top-0 left-0 right-0 w-full absolute pointer-events-none overflow-hidden -mt-20 h-20"
-            style={{ transform: "translateZ(0)" }}
-          >
-            <svg
-              className="absolute bottom-0 overflow-hidden"
-              xmlns="http://www.w3.org/2000/svg"
-              preserveAspectRatio="none"
-              version="1.1"
-              viewBox="0 0 2560 100"
-              x="0"
-              y="0"
-            >
-              <polygon
-                className="text-white fill-current"
-                points="2560 0 2560 100 0 100"
-              ></polygon>
-            </svg>
-          </div>
-          
-          <div className="container mx-auto px-4">
-            <div className="items-center flex flex-wrap">
-              <div className="w-full md:w-4/12 ml-auto mr-auto px-4">
-                <img 
-                  alt="..." 
-                  className="max-w-full rounded-lg shadow-lg" 
-                  src="https://images.unsplash.com/photo-1555212697-194d092e3b8f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=634&q=80" 
-                />
-              </div>
-              
-              <div className="w-full md:w-5/12 ml-auto mr-auto px-4">
-                <div className="md:pr-12">
-                  <div className="text-lightBlue-600 p-3 text-center inline-flex items-center justify-center w-16 h-16 mb-6 shadow-lg rounded-full bg-lightBlue-300">
-                    <i className="fas fa-rocket text-xl"></i>
-                  </div>
-                  <h3 className="text-3xl font-semibold">
-                    A growing company
-                  </h3>
-                  <p className="mt-4 text-lg leading-relaxed text-blueGray-500">
-                    The extension comes with three pre-built pages to help you get started faster. 
-                    You can change the text and images and you're good to go.
-                  </p>
-                  
-                  <ul className="list-none mt-6">
-                    <li className="py-2">
-                      <div className="flex items-center">
-                        <div>
-                          <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-lightBlue-600 bg-lightBlue-200 mr-3">
-                            <i className="fas fa-fingerprint"></i>
-                          </span>
-                        </div>
-                        <div>
-                          <h4 className="text-blueGray-500">
-                            Carefully crafted components
-                          </h4>
-                        </div>
-                      </div>
-                    </li>
-                    
-                    <li className="py-2">
-                      <div className="flex items-center">
-                        <div>
-                          <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-lightBlue-600 bg-lightBlue-200 mr-3">
-                            <i className="fab fa-html5"></i>
-                          </span>
-                        </div>
-                        <div>
-                          <h4 className="text-blueGray-500">
-                            Amazing page examples
-                          </h4>
-                        </div>
-                      </div>
-                    </li>
-                    
-                    <li className="py-2">
-                      <div className="flex items-center">
-                        <div>
-                          <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-lightBlue-600 bg-lightBlue-200 mr-3">
-                            <i className="far fa-paper-plane"></i>
-                          </span>
-                        </div>
-                        <div>
-                          <h4 className="text-blueGray-500">
-                            Dynamic components
-                          </h4>
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section> */}
-
-        {/* Team Section */}
-      
-
-        {/* Services Section */}
+        {/* ===== SERVICES ===== */}
         <section className="pb-20 relative block bg-blueGray-800">
-          <div 
+          <div
             className="bottom-auto top-0 left-0 right-0 w-full absolute pointer-events-none overflow-hidden -mt-20 h-20"
             style={{ transform: "translateZ(0)" }}
           >
@@ -463,8 +973,6 @@ const recommandations = [
               preserveAspectRatio="none"
               version="1.1"
               viewBox="0 0 2560 100"
-              x="0"
-              y="0"
             >
               <polygon
                 className="text-blueGray-800 fill-current"
@@ -472,64 +980,63 @@ const recommandations = [
               ></polygon>
             </svg>
           </div>
-          
+
           <div className="container mx-auto px-4 lg:pt-24 lg:pb-64">
             <div className="flex flex-wrap text-center justify-center">
               <div className="w-full lg:w-6/12 px-4">
                 <h2 className="text-4xl font-semibold text-white">
-                  Build something
+                  Nos Services
                 </h2>
                 <p className="text-lg leading-relaxed mt-4 mb-4 text-blueGray-400">
-                  Put the potentially record low maximum sea ice extent tihs year down to low ice. 
-                  According to the National Oceanic and Atmospheric Administration, Ted, Scambos.
+                  Une plateforme complète pour votre développement professionnel
                 </p>
               </div>
             </div>
-            
+
             <div className="flex flex-wrap mt-12 justify-center">
-              {/* Service 1 */}
               <div className="w-full lg:w-3/12 px-4 text-center">
                 <div className="text-blueGray-800 p-3 w-12 h-12 shadow-lg rounded-full bg-white inline-flex items-center justify-center">
-                  <i className="fas fa-medal text-xl"></i>
+                  <i className="fas fa-robot text-xl"></i>
                 </div>
                 <h6 className="text-xl mt-5 font-semibold text-white">
-                  Excelent Services
+                  IA & Recommandation
                 </h6>
                 <p className="mt-2 mb-4 text-blueGray-400">
-                  Some quick example text to build on the card title and make up the bulk of the card's content.
+                  Notre algorithme analyse votre profil pour vous recommander
+                  les formations les plus pertinentes.
                 </p>
               </div>
-              
-              {/* Service 2 */}
+
               <div className="w-full lg:w-3/12 px-4 text-center">
                 <div className="text-blueGray-800 p-3 w-12 h-12 shadow-lg rounded-full bg-white inline-flex items-center justify-center">
-                  <i className="fas fa-poll text-xl"></i>
+                  <i className="fas fa-certificate text-xl"></i>
                 </div>
                 <h5 className="text-xl mt-5 font-semibold text-white">
-                  Grow your market
+                  Certifications
                 </h5>
                 <p className="mt-2 mb-4 text-blueGray-400">
-                  Some quick example text to build on the card title and make up the bulk of the card's content.
+                  Obtenez des certificats reconnus à la fin de chaque formation
+                  complétée.
                 </p>
               </div>
-              
-              {/* Service 3 */}
+
               <div className="w-full lg:w-3/12 px-4 text-center">
                 <div className="text-blueGray-800 p-3 w-12 h-12 shadow-lg rounded-full bg-white inline-flex items-center justify-center">
-                  <i className="fas fa-lightbulb text-xl"></i>
+                  <i className="fas fa-headset text-xl"></i>
                 </div>
                 <h5 className="text-xl mt-5 font-semibold text-white">
-                  Launch time
+                  Support 24/7
                 </h5>
                 <p className="mt-2 mb-4 text-blueGray-400">
-                  Some quick example text to build on the card title and make up the bulk of the card's content.
+                  Une équipe dédiée pour vous accompagner tout au long de votre
+                  parcours.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Contact Section */}
+        {/* ===== CONTACT ===== */}
         <section className="relative block py-24 lg:pt-0 bg-blueGray-800">
           <div className="container mx-auto px-4">
             <div className="flex flex-wrap justify-center lg:-mt-64 -mt-48">
@@ -537,61 +1044,55 @@ const recommandations = [
                 <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-200">
                   <div className="flex-auto p-5 lg:p-10">
                     <h4 className="text-2xl font-semibold">
-                      Want to work with us?
+                      <i className="fas fa-envelope text-lightBlue-500 mr-2"></i>
+                      Contactez-nous
                     </h4>
                     <p className="leading-relaxed mt-1 mb-4 text-blueGray-500">
-                      Complete this form and we will get back to you in 24 hours.
+                      Une question ? Remplissez ce formulaire et nous vous
+                      répondrons sous 24h.
                     </p>
-                    
+
                     <div className="relative w-full mb-3 mt-8">
-                      <label 
-                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2" 
-                        htmlFor="full-name"
-                      >
-                        Full Name
+                      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                        Nom complet
                       </label>
-                      <input 
-                        type="text" 
-                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150" 
-                        placeholder="Full Name" 
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                        placeholder="Votre nom"
                       />
                     </div>
-                    
+
                     <div className="relative w-full mb-3">
-                      <label 
-                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2" 
-                        htmlFor="email"
-                      >
+                      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                         Email
                       </label>
-                      <input 
-                        type="email" 
-                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150" 
-                        placeholder="Email" 
+                      <input
+                        type="email"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                        placeholder="Votre email"
                       />
                     </div>
-                    
+
                     <div className="relative w-full mb-3">
-                      <label 
-                        className="block uppercase text-blueGray-600 text-xs font-bold mb-2" 
-                        htmlFor="message"
-                      >
+                      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                         Message
                       </label>
-                      <textarea 
-                        rows="4" 
-                        cols="80" 
-                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full" 
-                        placeholder="Type a message..." 
+                      <textarea
+                        rows="4"
+                        cols="80"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                        placeholder="Votre message..."
                       />
                     </div>
-                    
+
                     <div className="text-center mt-6">
-                      <button 
-                        className="bg-blueGray-800 text-white active:bg-blueGray-600 text-sm font-bold uppercase px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150" 
+                      <button
+                        className="bg-blueGray-800 text-white text-sm font-bold uppercase px-6 py-3 rounded shadow hover:shadow-lg transition-all duration-150"
                         type="button"
                       >
-                        Send Message
+                        <i className="fas fa-paper-plane mr-2"></i>
+                        Envoyer
                       </button>
                     </div>
                   </div>
@@ -601,9 +1102,21 @@ const recommandations = [
           </div>
         </section>
       </main>
-      
-      {/* Footer */}
+
       <Footer />
+
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </>
   );
 }

@@ -1,14 +1,64 @@
 /*eslint-disable*/
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
 import IndexNavbar from "components/Navbars/IndexNavbar.js";
 import Footer from "components/Footers/Footer.js";
 
 export default function Index() {
+  var [ville, setVille] = useState("");
+  var [domaine, setDomaine] = useState("");
+  var [search, setSearch] = useState("");
+
+  var formations = [
+    { id: 1, nom: "Développement Web Full Stack", ville: "tunis", domaine: "informatique", description: "Maîtrisez HTML, CSS, JavaScript, React et Node.js pour créer des applications web complètes et modernes.", prix: 450, duree: "3 mois", nbEtudiants: 128, rating: 4.8, formateur: "Ahmed Benali", niveau: "Intermédiaire" },
+    { id: 2, nom: "Marketing Digital & Réseaux Sociaux", ville: "sfax", domaine: "marketing", description: "Apprenez à créer des campagnes marketing efficaces sur Facebook, Instagram, Google Ads et plus encore.", prix: 300, duree: "2 mois", nbEtudiants: 95, rating: 4.6, formateur: "Sara Moussaoui", niveau: "Débutant" },
+    { id: 3, nom: "Data Science & Machine Learning", ville: "tunis", domaine: "data", description: "Explorez Python, Pandas, TensorFlow et les algorithmes de Machine Learning pour analyser des données massives.", prix: 550, duree: "4 mois", nbEtudiants: 76, rating: 4.9, formateur: "Karim Tazi", niveau: "Avancé" },
+    { id: 4, nom: "Intelligence Artificielle Appliquée", ville: "sousse", domaine: "ia", description: "Découvrez le Deep Learning, le NLP et la vision par ordinateur avec des projets pratiques.", prix: 600, duree: "4 mois", nbEtudiants: 54, rating: 4.7, formateur: "Mohamed Sahli", niveau: "Avancé" },
+    { id: 5, nom: "Développement Mobile React Native", ville: "ariana", domaine: "mobile", description: "Créez des applications mobiles iOS et Android avec React Native et déployez-les sur les stores.", prix: 0, gratuit: true, duree: "2 mois", nbEtudiants: 142, rating: 4.5, formateur: "Ines Ben Amor", niveau: "Intermédiaire" },
+    { id: 6, nom: "Réseaux & Cybersécurité", ville: "bizerte", domaine: "reseaux", description: "Apprenez la configuration réseau, la sécurité informatique et préparez la certification CCNA.", prix: 400, duree: "3 mois", nbEtudiants: 63, rating: 4.4, formateur: "Ali Hammami", niveau: "Intermédiaire" },
+  ];
+
+  var getImage = function (domaine) {
+    var images = {
+      informatique: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&q=80",
+      marketing: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&q=80",
+      data: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80",
+      mobile: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=500&q=80",
+      ia: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=500&q=80",
+      reseaux: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=500&q=80",
+    };
+    return images[domaine] || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&q=80";
+  };
+
+  var getColor = function (domaine) {
+    var colors = { informatique: "#3b82f6", marketing: "#8b5cf6", data: "#10b981", mobile: "#ec4899", ia: "#f59e0b", reseaux: "#ef4444" };
+    return colors[domaine] || "#0ea5e9";
+  };
+
+  var getIcon = function (domaine) {
+    var icons = { informatique: "fas fa-laptop-code", marketing: "fas fa-bullhorn", data: "fas fa-chart-bar", mobile: "fas fa-mobile-alt", ia: "fas fa-robot", reseaux: "fas fa-network-wired" };
+    return icons[domaine] || "fas fa-book";
+  };
+
+  var getVilleName = function (ville) {
+    var names = { tunis: "Tunis", ariana: "Ariana", sfax: "Sfax", sousse: "Sousse", bizerte: "Bizerte", monastir: "Monastir", nabeul: "Nabeul", ben_arous: "Ben Arous", manouba: "Manouba" };
+    return names[ville] || ville || "";
+  };
+
+  var formationsFiltrees = formations.filter(function (f) {
+    return (
+      (ville === "" || f.ville === ville) &&
+      (domaine === "" || f.domaine === domaine) &&
+      f.nom.toLowerCase().includes(search.toLowerCase())
+    );
+  });
+
   return (
     <>
       <IndexNavbar fixed />
+
+      {/* ===== SECTION 1 - HERO ===== */}
       <section className="header relative pt-16 items-center flex h-screen max-h-860-px">
         <div className="container mx-auto items-center flex flex-wrap">
           <div className="w-full md:w-8/12 lg:w-6/12 xl:w-6/12 px-4">
@@ -18,37 +68,25 @@ export default function Index() {
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-blueGray-500">
                 Une plateforme intelligente qui centralise les centres de formation
-et vous recommande les meilleures options selon votre profil.
-                {/* <a
-                  href="https://tailwindcss.com/?ref=creativetim"
-                  className="text-blueGray-600"
-                  target="_blank"
-                >
-                  Tailwind CSS
-                </a>
-                . It features multiple HTML elements and it comes with dynamic
-                components for ReactJS, Vue and Angular. */}
+                et vous recommande les meilleures options selon votre profil.
               </p>
               <div className="mt-12">
-                <a
-                  href="https://www.creative-tim.com/learning-lab/tailwind/react/overview/notus?ref=nr-index"
-                  target="_blank"
+                <Link
+                  to="/auth/login"
                   className="get-started text-white font-bold px-6 py-4 rounded outline-none focus:outline-none mr-1 mb-1 bg-lightBlue-500 active:bg-lightBlue-600 uppercase text-sm shadow hover:shadow-lg ease-linear transition-all duration-150"
                 >
                   Sign in
-                </a>
-                <a
-                  href="https://github.com/creativetimofficial/notus-react?ref=nr-index"
+                </Link>
+                <Link
+                  to="/auth/register"
                   className="github-star ml-1 text-white font-bold px-6 py-4 rounded outline-none focus:outline-none mr-1 mb-1 bg-blueGray-700 active:bg-blueGray-600 uppercase text-sm shadow hover:shadow-lg ease-linear transition-all duration-150"
-                  target="_blank"
                 >
                   Sign up
-                </a>
+                </Link>
               </div>
             </div>
           </div>
         </div>
-
         <img
           className="absolute top-0 b-auto right-0 pt-16 sm:w-6/12 -mt-48 sm:mt-0 w-10/12 max-h-860px"
           src={require("assets/img/Backschool.gif").default}
@@ -56,552 +94,475 @@ et vous recommande les meilleures options selon votre profil.
         />
       </section>
 
-      <section className="mt-48 md:mt-40 pb-40 relative bg-blueGray-100">
-        <div
-          className="-mt-20 top-0 bottom-auto left-0 right-0 w-full absolute h-20"
-          style={{ transform: "translateZ(0)" }}
-        >
-          <svg
-            className="absolute bottom-0 overflow-hidden"
-            xmlns="http://www.w3.org/2000/svg"
-            preserveAspectRatio="none"
-            version="1.1"
-            viewBox="0 0 2560 100"
-            x="0"
-            y="0"
-          >
-            <polygon
-              className="text-blueGray-100 fill-current"
-              points="2560 0 2560 100 0 100"
-            ></polygon>
-          </svg>
-        </div>
-        <div className="container mx-auto">
-          <div className="flex flex-wrap items-center">
-            <div className="w-10/12 md:w-6/12 lg:w-4/12 px-12 md:px-4 mr-auto ml-auto -mt-32">
-              <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded-lg bg-lightBlue-500">
-                <img
-                  alt="..."
-                  src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=700&q=80"
-                  className="w-full align-middle rounded-t-lg"
-                />
-                <blockquote className="relative p-8 mb-4">
-                  <svg
-                    preserveAspectRatio="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 583 95"
-                    className="absolute left-0 w-full block h-95-px -top-94-px"
-                  >
-                    <polygon
-                      points="-30,95 583,95 583,65"
-                      className="text-lightBlue-500 fill-current"
-                    ></polygon>
-                  </svg>
-                  <h4 className="text-xl font-bold text-white">
-                    Great for your awesome project
-                  </h4>
-                  <p className="text-md font-light mt-2 text-white">
-                    Putting together a page has never been easier than matching
-                    together pre-made components. From landing pages
-                    presentation to login areas, you can easily customise and
-                    built your pages.
-                  </p>
-                </blockquote>
-              </div>
-            </div>
+      {/* ===== SECTION 2 ===== */}
+      
 
-            <div className="w-full md:w-6/12 px-4">
-              <div className="flex flex-wrap">
-                <div className="w-full md:w-6/12 px-4">
-                  <div className="relative flex flex-col mt-4">
-                    <div className="px-4 py-5 flex-auto">
-                      <div className="text-blueGray-500 p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-white">
-                        <i className="fas fa-sitemap"></i>
-                      </div>
-                      <h6 className="text-xl mb-1 font-semibold">
-                        CSS Components
-                      </h6>
-                      <p className="mb-4 text-blueGray-500">
-                        Notus React comes with a huge number of Fully Coded CSS
-                        components.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="relative flex flex-col min-w-0">
-                    <div className="px-4 py-5 flex-auto">
-                      <div className="text-blueGray-500 p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-white">
-                        <i className="fas fa-drafting-compass"></i>
-                      </div>
-                      <h6 className="text-xl mb-1 font-semibold">
-                        JavaScript Components
-                      </h6>
-                      <p className="mb-4 text-blueGray-500">
-                        We also feature many dynamic components for React,
-                        NextJS, Vue and Angular.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="w-full md:w-6/12 px-4">
-                  <div className="relative flex flex-col min-w-0 mt-4">
-                    <div className="px-4 py-5 flex-auto">
-                      <div className="text-blueGray-500 p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-white">
-                        <i className="fas fa-newspaper"></i>
-                      </div>
-                      <h6 className="text-xl mb-1 font-semibold">Pages</h6>
-                      <p className="mb-4 text-blueGray-500">
-                        This extension also comes with 3 sample pages. They are
-                        fully coded so you can start working instantly.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="relative flex flex-col min-w-0">
-                    <div className="px-4 py-5 flex-auto">
-                      <div className="text-blueGray-500 p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-white">
-                        <i className="fas fa-file-alt"></i>
-                      </div>
-                      <h6 className="text-xl mb-1 font-semibold">
-                        Documentation
-                      </h6>
-                      <p className="mb-4 text-blueGray-500">
-                        Built by developers for developers. You will love how
-                        easy is to to work with Notus React.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* ===== SECTION 3 CARDS ===== */}
+      
 
-        <div className="container mx-auto overflow-hidden pb-20">
-          <div className="flex flex-wrap items-center">
-            <div className="w-full md:w-4/12 px-12 md:px-4 ml-auto mr-auto mt-48">
-              <div className="text-blueGray-500 p-3 text-center inline-flex items-center justify-center w-16 h-16 mb-6 shadow-lg rounded-full bg-white">
-                <i className="fas fa-sitemap text-xl"></i>
-              </div>
-              <h3 className="text-3xl mb-2 font-semibold leading-normal">
-                CSS Components
-              </h3>
-              <p className="text-lg font-light leading-relaxed mt-4 mb-4 text-blueGray-600">
-                Every element that you need in a product comes built in as a
-                component. All components fit perfectly with each other and can
-                have different colours.
-              </p>
-              <div className="block pb-6">
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Buttons
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Inputs
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Labels
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Menus
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Navbars
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Pagination
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Progressbars
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Typography
-                </span>
-              </div>
-              <a
-                href="https://www.creative-tim.com/learning-lab/tailwind/react/alerts/notus?ref=nr-index"
-                target="_blank"
-                className="font-bold text-blueGray-700 hover:text-blueGray-500 ease-linear transition-all duration-150"
-              >
-                View All{" "}
-                <i className="fa fa-angle-double-right ml-1 leading-relaxed"></i>
-              </a>
-            </div>
-
-            <div className="w-full md:w-5/12 px-4 mr-auto ml-auto mt-32">
-              <div className="relative flex flex-col min-w-0 w-full mb-6 mt-48 md:mt-0">
-                <img
-                  alt="..."
-                  src={require("assets/img/component-btn.png").default}
-                  className="w-full align-middle rounded absolute shadow-lg max-w-100-px z-3 left-145-px -top-29-px"
-                />
-                <img
-                  alt="..."
-                  src={require("assets/img/component-profile-card.png").default}
-                  className="w-full align-middle rounded-lg absolute shadow-lg -top-160-px left-260-px max-w-210-px"
-                />
-                <img
-                  alt="..."
-                  src={require("assets/img/component-info-card.png").default}
-                  className="w-full align-middle rounded-lg absolute shadow-lg max-w-180-px -top-225-px left-40-px z-2"
-                />
-                <img
-                  alt="..."
-                  src={require("assets/img/component-info-2.png").default}
-                  className="w-full align-middle rounded-lg absolute shadow-2xl max-w-200-px -left-50-px top-25-px"
-                />
-                <img
-                  alt="..."
-                  src={require("assets/img/component-menu.png").default}
-                  className="w-full align-middle rounded absolute shadow-lg max-w-580-px -left-20-px top-210-px"
-                />
-                <img
-                  alt="..."
-                  src={require("assets/img/component-btn-pink.png").default}
-                  className="w-full align-middle rounded absolute shadow-xl max-w-120-px left-195-px top-95-px"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center pt-32">
-            <div className="w-full md:w-6/12 px-4 mr-auto ml-auto mt-32">
-              <div className="justify-center flex flex-wrap relative">
-                <div className="my-4 w-full lg:w-6/12 px-4">
-                  <a
-                    href="https://www.creative-tim.com/learning-lab/tailwind/svelte/alerts/notus?ref=vtw-index"
-                    target="_blank"
-                  >
-                    <div className="bg-red-600 shadow-lg rounded-lg text-center p-8">
-                      <img
-                        alt="..."
-                        className="shadow-md rounded-full max-w-full w-16 mx-auto p-2 bg-white"
-                        src="https://raw.githubusercontent.com/creativetimofficial/public-assets/master/logos/svelte.jpg"
-                      />
-                      <p className="text-lg text-white mt-4 font-semibold">
-                        Svelte
-                      </p>
-                    </div>
-                  </a>
-                  <a
-                    href="https://www.creative-tim.com/learning-lab/tailwind/react/alerts/notus?ref=vtw-index"
-                    target="_blank"
-                  >
-                    <div className="bg-lightBlue-500 shadow-lg rounded-lg text-center p-8 mt-8">
-                      <img
-                        alt="..."
-                        className="shadow-md rounded-full max-w-full w-16 mx-auto p-2 bg-white"
-                        src="https://raw.githubusercontent.com/creativetimofficial/public-assets/master/logos/react.jpg"
-                      />
-                      <p className="text-lg text-white mt-4 font-semibold">
-                        ReactJS
-                      </p>
-                    </div>
-                  </a>
-                  <a
-                    href="https://www.creative-tim.com/learning-lab/tailwind/nextjs/alerts/notus?ref=vtw-index"
-                    target="_blank"
-                  >
-                    <div className="bg-blueGray-700 shadow-lg rounded-lg text-center p-8 mt-8">
-                      <img
-                        alt="..."
-                        className="shadow-md rounded-full max-w-full w-16 mx-auto p-2 bg-white"
-                        src="https://raw.githubusercontent.com/creativetimofficial/public-assets/master/logos/nextjs.jpg"
-                      />
-                      <p className="text-lg text-white mt-4 font-semibold">
-                        NextJS
-                      </p>
-                    </div>
-                  </a>
-                </div>
-                <div className="my-4 w-full lg:w-6/12 px-4 lg:mt-16">
-                  <a
-                    href="https://www.creative-tim.com/learning-lab/tailwind/js/alerts/notus?ref=vtw-index"
-                    target="_blank"
-                  >
-                    <div className="bg-yellow-500 shadow-lg rounded-lg text-center p-8">
-                      <img
-                        alt="..."
-                        className="shadow-md rounded-full max-w-full w-16 mx-auto p-2 bg-white"
-                        src="https://raw.githubusercontent.com/creativetimofficial/public-assets/master/logos/js.png"
-                      />
-                      <p className="text-lg text-white mt-4 font-semibold">
-                        JavaScript
-                      </p>
-                    </div>
-                  </a>
-                  <a
-                    href="https://www.creative-tim.com/learning-lab/tailwind/angular/alerts/notus?ref=vtw-index"
-                    target="_blank"
-                  >
-                    <div className="bg-red-700 shadow-lg rounded-lg text-center p-8 mt-8">
-                      <img
-                        alt="..."
-                        className="shadow-md rounded-full max-w-full w-16 mx-auto p-2 bg-white"
-                        src="https://raw.githubusercontent.com/creativetimofficial/public-assets/master/logos/angular.jpg"
-                      />
-                      <p className="text-lg text-white mt-4 font-semibold">
-                        Angular
-                      </p>
-                    </div>
-                  </a>
-                  <a
-                    href="https://www.creative-tim.com/learning-lab/tailwind/vue/alerts/notus?ref=vtw-index"
-                    target="_blank"
-                  >
-                    <div className="bg-emerald-500 shadow-lg rounded-lg text-center p-8 mt-8">
-                      <img
-                        alt="..."
-                        className="shadow-md rounded-full max-w-full w-16 mx-auto p-2 bg-white"
-                        src="https://raw.githubusercontent.com/creativetimofficial/public-assets/master/logos/vue.jpg"
-                      />
-                      <p className="text-lg text-white mt-4 font-semibold">
-                        Vue.js
-                      </p>
-                    </div>
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="w-full md:w-4/12 px-12 md:px-4 ml-auto mr-auto mt-48">
-              <div className="text-blueGray-500 p-3 text-center inline-flex items-center justify-center w-16 h-16 mb-6 shadow-lg rounded-full bg-white">
-                <i className="fas fa-drafting-compass text-xl"></i>
-              </div>
-              <h3 className="text-3xl mb-2 font-semibold leading-normal">
-                Javascript Components
-              </h3>
-              <p className="text-lg font-light leading-relaxed mt-4 mb-4 text-blueGray-600">
-                In order to create a great User Experience some components
-                require JavaScript. In this way you can manipulate the elements
-                on the page and give more options to your users.
-              </p>
-              <p className="text-lg font-light leading-relaxed mt-4 mb-4 text-blueGray-600">
-                We created a set of Components that are dynamic and come to help
-                you.
-              </p>
-              <div className="block pb-6">
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Alerts
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Dropdowns
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Menus
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Modals
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Navbars
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Popovers
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Tabs
-                </span>
-                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-white uppercase last:mr-0 mr-2 mt-2">
-                  Tooltips
-                </span>
-              </div>
-              <a
-                href="https://www.creative-tim.com/learning-lab/tailwind/react/alerts/notus?ref=nr-index"
-                target="_blank"
-                className="font-bold text-blueGray-700 hover:text-blueGray-500 ease-linear transition-all duration-150"
-              >
-                View all{" "}
-                <i className="fa fa-angle-double-right ml-1 leading-relaxed"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 pb-32 pt-48">
-          <div className="items-center flex flex-wrap">
-            <div className="w-full md:w-5/12 ml-auto px-12 md:px-4">
-              <div className="md:pr-12">
-                <div className="text-blueGray-500 p-3 text-center inline-flex items-center justify-center w-16 h-16 mb-6 shadow-lg rounded-full bg-white">
-                  <i className="fas fa-file-alt text-xl"></i>
-                </div>
-                <h3 className="text-3xl font-semibold">
-                  Complex Documentation
-                </h3>
-                <p className="mt-4 text-lg leading-relaxed text-blueGray-500">
-                  This extension comes a lot of fully coded examples that help
-                  you get started faster. You can adjust the colors and also the
-                  programming language. You can change the text and images and
-                  you're good to go.
-                </p>
-                <ul className="list-none mt-6">
-                  <li className="py-2">
-                    <div className="flex items-center">
-                      <div>
-                        <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-blueGray-50 mr-3">
-                          <i className="fas fa-fingerprint"></i>
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className="text-blueGray-500">
-                          Built by Developers for Developers
-                        </h4>
-                      </div>
-                    </div>
-                  </li>
-                  <li className="py-2">
-                    <div className="flex items-center">
-                      <div>
-                        <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-blueGray-50 mr-3">
-                          <i className="fab fa-html5"></i>
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className="text-blueGray-500">
-                          Carefully crafted code for Components
-                        </h4>
-                      </div>
-                    </div>
-                  </li>
-                  <li className="py-2">
-                    <div className="flex items-center">
-                      <div>
-                        <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blueGray-500 bg-blueGray-50 mr-3">
-                          <i className="far fa-paper-plane"></i>
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className="text-blueGray-500">
-                          Dynamic Javascript Components
-                        </h4>
-                      </div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="w-full md:w-6/12 mr-auto px-4 pt-24 md:pt-0">
-              <img
-                alt="..."
-                className="max-w-full rounded-lg shadow-xl"
-                style={{
-                  transform:
-                    "scale(1) perspective(1040px) rotateY(-11deg) rotateX(2deg) rotate(2deg)",
-                }}
-                src={require("assets/img/documentation.png").default}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="justify-center text-center flex flex-wrap mt-24">
-          <div className="w-full md:w-6/12 px-12 md:px-4">
-            <h2 className="font-semibold text-4xl">Beautiful Example Pages</h2>
-            <p className="text-lg leading-relaxed mt-4 mb-4 text-blueGray-500">
-              Notus React is a completly new product built using our past
-              experience in web templates. Take the examples we made for you and
-              start playing with them.
+      {/* ===== SECTION FORMATIONS ===== */}
+      <section className="py-20 bg-blueGray-200">
+        <div className="container mx-auto px-4">
+          {/* Titre */}
+          <div className="text-center mb-12">
+            <span className="text-sm font-bold uppercase text-lightBlue-500 tracking-wider">
+              Explorez nos formations
+            </span>
+            <h2 className="text-4xl font-semibold text-blueGray-800 mt-2">
+              Formations disponibles
+            </h2>
+            <p className="text-lg text-blueGray-500 mt-4 max-w-xl mx-auto">
+              Découvrez toutes les formations professionnelles disponibles à travers la Tunisie
             </p>
           </div>
-        </div>
-      </section>
 
-      <section className="block relative z-1 bg-blueGray-600">
-        <div className="container mx-auto">
-          <div className="justify-center flex flex-wrap">
-            <div className="w-full lg:w-12/12 px-4  -mt-24">
-              <div className="flex flex-wrap">
-                <div className="w-full lg:w-4/12 px-4">
-                  <h5 className="text-xl font-semibold pb-4 text-center">
-                    Login Page
-                  </h5>
-                  <Link to="/auth/login">
-                    <div className="hover:-mt-4 relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded-lg ease-linear transition-all duration-150">
-                      <img
-                        alt="..."
-                        className="align-middle border-none max-w-full h-auto rounded-lg"
-                        src={require("assets/img/login.jpg").default}
-                      />
-                    </div>
-                  </Link>
-                </div>
+          {/* Filtres */}
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 className="text-xl font-bold text-blueGray-800 mb-6 flex items-center">
+              <i className="fas fa-filter text-lightBlue-500 mr-3"></i>
+              Filtrer les formations
+            </h3>
 
-                <div className="w-full lg:w-4/12 px-4">
-                  <h5 className="text-xl font-semibold pb-4 text-center">
-                    Profile Page
-                  </h5>
-                  <Link to="/profile">
-                    <div className="hover:-mt-4 relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded-lg ease-linear transition-all duration-150">
-                      <img
-                        alt="..."
-                        className="align-middle border-none max-w-full h-auto rounded-lg"
-                        src={require("assets/img/profile.jpg").default}
-                      />
-                    </div>
-                  </Link>
-                </div>
-
-                <div className="w-full lg:w-4/12 px-4">
-                  <h5 className="text-xl font-semibold pb-4 text-center">
-                    Landing Page
-                  </h5>
-                  <Link to="/landing">
-                    <div className="hover:-mt-4 relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded-lg ease-linear transition-all duration-150">
-                      <img
-                        alt="..."
-                        className="align-middle border-none max-w-full h-auto rounded-lg"
-                        src={require("assets/img/landing.jpg").default}
-                      />
-                    </div>
-                  </Link>
+            <div className="flex flex-wrap -mx-2">
+              <div className="w-full md:w-4/12 px-2 mb-4">
+                <label className="block text-xs font-bold uppercase text-blueGray-500 mb-2">
+                  <i className="fas fa-search mr-1"></i> Rechercher
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Nom de la formation..."
+                    className="w-full border border-blueGray-200 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-lightBlue-500 focus:border-transparent text-sm transition-all"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                  <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-blueGray-400"></i>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <section className="py-20 bg-blueGray-600 overflow-hidden">
-        <div className="container mx-auto pb-64">
-          <div className="flex flex-wrap justify-center">
-            <div className="w-full md:w-5/12 px-12 md:px-4 ml-auto mr-auto md:mt-64">
-              <div className="text-blueGray-500 p-3 text-center inline-flex items-center justify-center w-16 h-16 mb-6 shadow-lg rounded-full bg-white">
-                <i className="fas fa-code-branch text-xl"></i>
-              </div>
-              <h3 className="text-3xl mb-2 font-semibold leading-normal text-white">
-                Open Source
-              </h3>
-              <p className="text-lg font-light leading-relaxed mt-4 mb-4 text-blueGray-400">
-                Since{" "}
-                <a
-                  href="https://tailwindcss.com/?ref=creativetim"
-                  className="text-blueGray-300"
-                  target="_blank"
+              <div className="w-full md:w-3/12 px-2 mb-4">
+                <label className="block text-xs font-bold uppercase text-blueGray-500 mb-2">
+                  <i className="fas fa-map-marker-alt mr-1"></i> Gouvernorat
+                </label>
+                <select
+                  className="w-full border border-blueGray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-lightBlue-500 text-sm bg-white"
+                  onChange={(e) => setVille(e.target.value)}
+                  value={ville}
                 >
-                  Tailwind CSS
-                </a>{" "}
-                is an open source project we wanted to continue this movement
-                too. You can give this version a try to feel the design and also
-                test the quality of the code!
-              </p>
-              <p className="text-lg font-light leading-relaxed mt-0 mb-4 text-blueGray-400">
-                Get it free on Github and please help us spread the news with a
-                Star!
-              </p>
-              <a
-                href="https://github.com/creativetimofficial/notus-react?ref=nr-index"
-                target="_blank"
-                className="github-star mt-4 inline-block text-white font-bold px-6 py-4 rounded outline-none focus:outline-none mr-1 mb-1 bg-blueGray-700 active:bg-blueGray-600 uppercase text-sm shadow hover:shadow-lg"
-              >
-                Github Star
-              </a>
+                  <option value="">Tous les gouvernorats</option>
+                  <option value="tunis">Tunis</option>
+                  <option value="ariana">Ariana</option>
+                  <option value="ben_arous">Ben Arous</option>
+                  <option value="manouba">Manouba</option>
+                  <option value="nabeul">Nabeul</option>
+                  <option value="zaghouan">Zaghouan</option>
+                  <option value="bizerte">Bizerte</option>
+                  <option value="beja">Béja</option>
+                  <option value="jendouba">Jendouba</option>
+                  <option value="kef">Le Kef</option>
+                  <option value="siliana">Siliana</option>
+                  <option value="sousse">Sousse</option>
+                  <option value="monastir">Monastir</option>
+                  <option value="mahdia">Mahdia</option>
+                  <option value="sfax">Sfax</option>
+                  <option value="kairouan">Kairouan</option>
+                  <option value="kasserine">Kasserine</option>
+                  <option value="sidi_bouzid">Sidi Bouzid</option>
+                  <option value="gabes">Gabès</option>
+                  <option value="medenine">Médenine</option>
+                  <option value="tataouine">Tataouine</option>
+                  <option value="gafsa">Gafsa</option>
+                  <option value="tozeur">Tozeur</option>
+                  <option value="kebili">Kébili</option>
+                </select>
+              </div>
+
+              <div className="w-full md:w-3/12 px-2 mb-4">
+                <label className="block text-xs font-bold uppercase text-blueGray-500 mb-2">
+                  <i className="fas fa-layer-group mr-1"></i> Domaine
+                </label>
+                <select
+                  className="w-full border border-blueGray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-lightBlue-500 text-sm bg-white"
+                  onChange={(e) => setDomaine(e.target.value)}
+                  value={domaine}
+                >
+                  <option value="">Tous les domaines</option>
+                  <option value="informatique">Informatique & IT</option>
+                  <option value="reseaux">Réseaux & Télécom</option>
+                  <option value="ia">Intelligence Artificielle</option>
+                  <option value="data">Data Science</option>
+                  <option value="mobile">Développement Mobile</option>
+                  <option value="marketing">Marketing Digital</option>
+                </select>
+              </div>
+
+              <div className="w-full md:w-2/12 px-2 mb-4 flex items-end">
+                <button
+                  onClick={() => {
+                    setVille("");
+                    setDomaine("");
+                    setSearch("");
+                  }}
+                  className="w-full bg-blueGray-100 text-blueGray-600 font-bold text-sm px-4 py-3 rounded-lg hover:bg-blueGray-200 transition-all"
+                >
+                  <i className="fas fa-redo mr-2"></i>
+                  Reset
+                </button>
+              </div>
             </div>
 
-            <div className="w-full md:w-4/12 px-4 mr-auto ml-auto mt-32 relative">
-              <i className="fab fa-github text-blueGray-700 absolute -top-150-px -right-100 left-auto opacity-80 text-55"></i>
-            </div>
+            {(ville || domaine || search) && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="text-xs text-blueGray-500">Filtres actifs :</span>
+                {search && (
+                  <span className="bg-lightBlue-100 text-lightBlue-700 text-xs px-3 py-1 rounded-full flex items-center">
+                    "{search}"
+                    <button onClick={() => setSearch("")} className="ml-1 hover:text-red-500">×</button>
+                  </span>
+                )}
+                {ville && (
+                  <span className="bg-emerald-100 text-emerald-700 text-xs px-3 py-1 rounded-full flex items-center">
+                    📍 {ville}
+                    <button onClick={() => setVille("")} className="ml-1 hover:text-red-500">×</button>
+                  </span>
+                )}
+                {domaine && (
+                  <span className="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full flex items-center">
+                    🏷️ {domaine}
+                    <button onClick={() => setDomaine("")} className="ml-1 hover:text-red-500">×</button>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Compteur */}
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-blueGray-800">
+              <i className="fas fa-book-open text-lightBlue-500 mr-2"></i>
+              Résultats
+            </h3>
+            <span className="bg-lightBlue-100 text-lightBlue-700 text-sm font-bold px-4 py-2 rounded-full">
+              {formationsFiltrees.length} formation{formationsFiltrees.length > 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {/* Grille formations */}
+          {formationsFiltrees.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto">
+                <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔍</div>
+                <h4 className="text-xl font-bold text-blueGray-800 mb-2">
+                  Aucune formation trouvée
+                </h4>
+                <button
+                  onClick={() => {
+                    setVille("");
+                    setDomaine("");
+                    setSearch("");
+                  }}
+                  className="bg-lightBlue-500 text-white font-bold text-sm px-6 py-3 rounded-lg hover:bg-lightBlue-600 transition-all"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap">
+              {formationsFiltrees.map(function (formation, index) {
+                return (
+                  <div
+                    key={formation.id}
+                    className="w-full lg:w-4/12 px-4"
+                    style={{
+                      animation: "fadeInUp 0.5s ease-out " + index * 0.1 + "s both",
+                    }}
+                  >
+                    <div className="hover:-mt-4 relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg ease-linear transition-all duration-150 overflow-hidden group">
+                      {/* Titre dans la carte */}
+                      <div
+                        style={{
+                          padding: "14px 16px 10px",
+                          borderBottom: "1px solid #f1f5f9",
+                        }}
+                      >
+                        <Link
+                          to={"/centre/" + formation.id}
+                          style={{ textDecoration: "none" }}
+                        >
+                          <h5
+                            style={{
+                              fontSize: "15px",
+                              fontWeight: "bold",
+                              color: "#1e293b",
+                              margin: 0,
+                              textAlign: "center",
+                              transition: "color 0.2s",
+                              cursor: "pointer",
+                            }}
+                            className="group-hover:text-lightBlue-600"
+                          >
+                            {formation.nom}
+                          </h5>
+                        </Link>
+                      </div>
+
+                      {/* Image */}
+                      <div
+                        style={{
+                          position: "relative",
+                          height: "180px",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <img
+                          alt={formation.nom}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          src={getImage(formation.domaine)}
+                        />
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: "linear-gradient(to top, rgba(0,0,0,0.6), transparent)",
+                          }}
+                        ></div>
+
+                        {/* Badge domaine */}
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: "10px",
+                            left: "10px",
+                            backgroundColor: getColor(formation.domaine),
+                            color: "white",
+                            fontSize: "10px",
+                            fontWeight: "bold",
+                            padding: "4px 10px",
+                            borderRadius: "20px",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          <i
+                            className={getIcon(formation.domaine)}
+                            style={{ marginRight: "4px" }}
+                          ></i>
+                          {formation.domaine}
+                        </span>
+
+                        {/* Prix */}
+                        <span
+                          style={{
+                            position: "absolute",
+                            bottom: "10px",
+                            right: "10px",
+                            backgroundColor:
+                              formation.prix === 0 || formation.gratuit
+                                ? "#10b981"
+                                : "#1e293b",
+                            color: "white",
+                            fontSize: "13px",
+                            fontWeight: "bold",
+                            padding: "4px 12px",
+                            borderRadius: "20px",
+                          }}
+                        >
+                          {formation.prix === 0 || formation.gratuit
+                            ? "Gratuit"
+                            : formation.prix + " DT"}
+                        </span>
+
+                        {/* Niveau */}
+                        {formation.niveau && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              bottom: "10px",
+                              left: "10px",
+                              backgroundColor:
+                                formation.niveau === "Débutant"
+                                  ? "#10b981"
+                                  : formation.niveau === "Intermédiaire"
+                                  ? "#f59e0b"
+                                  : "#ef4444",
+                              color: "white",
+                              fontSize: "10px",
+                              fontWeight: "bold",
+                              padding: "3px 8px",
+                              borderRadius: "20px",
+                            }}
+                          >
+                            {formation.niveau}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Contenu */}
+                      <div style={{ padding: "14px 16px" }}>
+                        {formation.description && (
+                          <p
+                            style={{
+                              fontSize: "12px",
+                              color: "#94a3b8",
+                              marginBottom: "10px",
+                              lineHeight: "1.5",
+                              overflow: "hidden",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                            }}
+                          >
+                            {formation.description}
+                          </p>
+                        )}
+
+                        {/* Tags */}
+                        <div
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "6px",
+                            marginBottom: "10px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              color: "#64748b",
+                              backgroundColor: "#f1f5f9",
+                              padding: "3px 8px",
+                              borderRadius: "20px",
+                            }}
+                          >
+                            📍 {getVilleName(formation.ville)}
+                          </span>
+                          {formation.duree && (
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                color: "#64748b",
+                                backgroundColor: "#f1f5f9",
+                                padding: "3px 8px",
+                                borderRadius: "20px",
+                              }}
+                            >
+                              ⏱ {formation.duree}
+                            </span>
+                          )}
+                          {formation.nbEtudiants && (
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                color: "#64748b",
+                                backgroundColor: "#f1f5f9",
+                                padding: "3px 8px",
+                                borderRadius: "20px",
+                              }}
+                            >
+                              👥 {formation.nbEtudiants}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Note + Formateur */}
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "12px",
+                            paddingBottom: "10px",
+                            borderBottom: "1px solid #f1f5f9",
+                          }}
+                        >
+                          {formation.rating && (
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                              {[1, 2, 3, 4, 5].map(function (star) {
+                                return (
+                                  <span
+                                    key={star}
+                                    style={{
+                                      color:
+                                        star <= Math.floor(formation.rating)
+                                          ? "#facc15"
+                                          : "#e2e8f0",
+                                      fontSize: "11px",
+                                    }}
+                                  >
+                                    ★
+                                  </span>
+                                );
+                              })}
+                              <span
+                                style={{
+                                  fontSize: "11px",
+                                  color: "#94a3b8",
+                                  marginLeft: "4px",
+                                }}
+                              >
+                                {formation.rating}
+                              </span>
+                            </div>
+                          )}
+                          {formation.formateur && (
+                            <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+                              🎓 {formation.formateur}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Boutons */}
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <Link
+                            to={"/centre/" + formation.id}
+                            style={{
+                              flex: 1,
+                              textAlign: "center",
+                              backgroundColor: "#0ea5e9",
+                              color: "white",
+                              fontWeight: "bold",
+                              fontSize: "11px",
+                              textTransform: "uppercase",
+                              padding: "8px",
+                              borderRadius: "6px",
+                              textDecoration: "none",
+                            }}
+                          >
+                            <i className="fas fa-eye" style={{ marginRight: "4px" }}></i>
+                            Détails
+                          </Link>
+                          <Link
+                            to="/auth/register"
+                            style={{
+                              textAlign: "center",
+                              backgroundColor: "#10b981",
+                              color: "white",
+                              fontWeight: "bold",
+                              fontSize: "11px",
+                              textTransform: "uppercase",
+                              padding: "8px 12px",
+                              borderRadius: "6px",
+                              textDecoration: "none",
+                            }}
+                          >
+                            <i className="fas fa-user-plus" style={{ marginRight: "4px" }}></i>
+                            S'inscrire
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
+      {/* ===== SECTION CTA FINALE ===== */}
       <section className="pb-16 bg-blueGray-200 relative pt-32">
         <div
           className="-mt-20 top-0 bottom-auto left-0 right-0 w-full absolute h-20"
@@ -632,35 +593,48 @@ et vous recommande les meilleures options selon votre profil.
                 </span>
               </p>
               <h3 className="font-semibold text-3xl">
-                Do you love this Starter Kit?
+                Prêt à commencer votre formation ?
               </h3>
               <p className="text-blueGray-500 text-lg leading-relaxed mt-4 mb-4">
-                Cause if you do, it can be yours now. Hit the buttons below to
-                navigate to get the Free version for your next project. Build a
-                new web app or give an old project a new look!
+                Rejoignez des milliers d'étudiants qui ont déjà transformé leur
+                carrière grâce à nos formations. Inscrivez-vous gratuitement
+                et commencez dès aujourd'hui !
               </p>
               <div className="sm:block flex flex-col mt-10">
-                <a
-                  href="https://www.creative-tim.com/learning-lab/tailwind/react/overview/notus?ref=nr-index"
-                  target="_blank"
+                <Link
+                  to="/auth/register"
                   className="get-started text-white font-bold px-6 py-4 rounded outline-none focus:outline-none mr-1 mb-2 bg-lightBlue-500 active:bg-lightBlue-600 uppercase text-sm shadow hover:shadow-lg ease-linear transition-all duration-150"
                 >
-                  Get started
-                </a>
-                <a
-                  href="https://github.com/creativetimofficial/notus-react?ref=nr-index"
-                  target="_blank"
+                  <i className="fas fa-rocket mr-2"></i>
+                  Créer mon compte
+                </Link>
+                <Link
+                  to="/auth/login"
                   className="github-star sm:ml-1 text-white font-bold px-6 py-4 rounded outline-none focus:outline-none mr-1 mb-1 bg-blueGray-700 active:bg-blueGray-600 uppercase text-sm shadow hover:shadow-lg"
                 >
-                  <i className="fab fa-github text-lg mr-1"></i>
-                  <span>Help With a Star</span>
-                </a>
+                  <i className="fas fa-sign-in-alt mr-2"></i>
+                  Se connecter
+                </Link>
               </div>
-              <div className="text-center mt-16"></div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Animations */}
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+
       <Footer />
     </>
   );
