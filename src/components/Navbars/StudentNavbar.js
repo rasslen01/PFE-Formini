@@ -1,59 +1,84 @@
 import React from "react";
 import { Link, useHistory } from "react-router-dom";
+import ProfileDropdown from "components/Dropdowns/ProfileDropdown";
 
 export default function StudentNavbar() {
-  const navigate = useHistory();
+  const history = useHistory();
+  const [navbarOpen, setNavbarOpen] = React.useState(false);
 
   const handleLogout = () => {
-    // supprime le token ou info étudiant (selon ton auth)
     localStorage.removeItem("token");
-    navigate("/login"); // redirige vers login
+    history.push("/auth/login");
   };
 
   return (
-    <nav className="bg-blue-600 text-black p-4 flex justify-between items-center">
-        
-      <div className="font-bold text-xl">
-        Formini
+    <nav className="fixed top-0 w-full z-50 bg-blue-600 shadow-md h-16">  {/* h-16 = hauteur fixe */}
+      <div className="w-full px-10 flex flex-wrap items-center justify-between">
+
+        {/* Logo */}
+        <Link
+          className="text-white text-xl font-bold py-3 uppercase"
+          to="/dashboard"
+        >
+          Formini
+        </Link>
+
+        {/* Mobile button */}
+        <button
+          className="lg:hidden text-white text-xl"
+          onClick={() => setNavbarOpen(!navbarOpen)}
+        >
+          <i className="fas fa-bars"></i>
+        </button>
+
+        {/* Menu */}
+        <div
+          className={
+            "lg:flex flex-grow items-center justify-end " +
+            (navbarOpen ? "block mt-4" : "hidden lg:block")
+          }
+        >
+          <ul className="flex flex-col lg:flex-row items-center lg:space-x-14 space-y-4 lg:space-y-0">
+
+            <li>
+              <Link
+                to="/dashboard"
+                className="text-white font-bold uppercase px-3 py-2 hover:text-gray-200"
+              >
+                Accueil
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/landing"
+                className="text-white font-bold uppercase px-3 py-2 hover:text-gray-200"
+              >
+                Formations
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/mes-inscriptions"
+                className="text-white font-bold uppercase px-3 py-2 hover:text-gray-200"
+              >
+                Mes Inscriptions
+              </Link>
+            </li>
+
+            <li className="px-3">
+              <ProfileDropdown />
+            </li>
+
+            <li>
+              
+            </li>
+
+          </ul>
+        </div>
+
       </div>
-
-      <div className="flex items-center gap-3">
-  <Link 
-    to="/dashboard" 
-    className="text-lightBlue-500 bg-transparent border border-solid border-lightBlue-500 hover:bg-lightBlue-500 hover:text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded-full outline-none focus:outline-none transition-all duration-150"
-  >
-    Accueil
-  </Link>
-
-  <Link 
-    to="/formations" 
-    className="text-lightBlue-500 bg-transparent border border-solid border-lightBlue-500 hover:bg-lightBlue-500 hover:text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded-full outline-none focus:outline-none transition-all duration-150"
-  >
-    Formations
-  </Link>
-
-  <Link 
-    to="/mes-inscriptions" 
-    className="text-lightBlue-500 bg-transparent border border-solid border-lightBlue-500 hover:bg-lightBlue-500 hover:text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded-full outline-none focus:outline-none transition-all duration-150"
-  >
-    Mes Inscriptions
-  </Link>
-
-  <Link 
-    to="/profile" 
-    className="text-lightBlue-500 bg-transparent border border-solid border-lightBlue-500 hover:bg-lightBlue-500 hover:text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded-full outline-none focus:outline-none transition-all duration-150"
-  >
-    Profil
-  </Link>
-
-  <button 
-    onClick={handleLogout} 
-    className="bg-red-500 hover:bg-red-600 text-white font-bold uppercase text-xs px-4 py-2 rounded-full transition-all duration-150"
-  >
-    Déconnexion
-  </button>
-</div>
-
     </nav>
   );
 }
