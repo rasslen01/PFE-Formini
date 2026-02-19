@@ -3038,3 +3038,25 @@ select {
 
 @media (min-width: 1536px) {
 }
+/* Optionnelle: ajouter dans global.css ou tailwind */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 50;
+}
+
+.modal-container {
+  position: fixed;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh; /* ne dépasse jamais l'écran */
+  overflow-y: auto; /* scroll seulement dans la modal */
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  z-index: 60;
+}
