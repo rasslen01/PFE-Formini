@@ -1,117 +1,86 @@
 // ═══════════════════════════════════════════════
-// 📁 src/api/apiUser.js
+// 📁 src/api/apiCentre.js
 // ═══════════════════════════════════════════════
 
 import axios from "axios";
-import { use } from "react";
 
 const apiUrl = "http://localhost:5000";
 
 // ─────────────────────────────────────────
-// GET - Récupérer tous les utilisateurs
+// GET - Récupérer tous les centres
 // ─────────────────────────────────────────
-export async function getAllUsers() {
-  return await axios.get(`${apiUrl}/getAllUsers`);
+export async function getAllCentres() {
+  return await axios.get(`${apiUrl}/getAllCentres`);
 }
 
 // ─────────────────────────────────────────
-// GET - Récupérer un utilisateur par ID
+// GET - Récupérer un centre par ID
 // ─────────────────────────────────────────
-export async function getUserById(id) {
-  return await axios.get(`${apiUrl}/getUser/${id}`);
+export async function getCentreById(id) {
+  return await axios.get(`${apiUrl}/getCentre/${id}`);
 }
 
 // ─────────────────────────────────────────
-// POST - Ajouter un utilisateur
+// POST - Ajouter un centre
 // ─────────────────────────────────────────
-export async function addUser(userData) {
-  return await axios.post(`${apiUrl}/addUser`, {
-    name: userData.name,
-    email: userData.email,
-    role: userData.role,
-    xp: userData.xp,
-    isActive: userData.isActive,
-  });
-}
-export async function addUserWithImage(userData) {
-  return await axios.post(`${apiUrl}/addUserWithImage`, {
-    name: userData.name,
-    email: userData.email,
-    role: userData.role,
-    xp: userData.xp,
-    isActive: userData.isActive,
-    image: userData.image,
-    Headers: {
-      "Content-Type": "multipart/form-data",
-    },
-    withCredentials: true,
-  });
-}
-
-
- 
-// ─────────────────────────────────────────
-// PUT - Modifier un utilisateur
-// ─────────────────────────────────────────
-export async function updateUser(id, userData) {
-  return await axios.put(`${apiUrl}/updateUser/${id}`, {
-    name: userData.name,
-    email: userData.email,
-    role: userData.role,
-    xp: userData.xp,
-    isActive: userData.isActive,
+export async function addCentre(centreData) {
+  return await axios.post(`${apiUrl}/addCentre`, {
+    name: centreData.name,
+    email: centreData.email,
+    logo: centreData.logo,
+    status: centreData.status,
   });
 }
 
 // ─────────────────────────────────────────
-// DELETE - Supprimer un utilisateur
+// PUT - Modifier un centre
 // ─────────────────────────────────────────
-export async function deleteUser(id) {
-  return await axios.delete(`${apiUrl}/deleteUser/${id}`);
+export async function updateCentre(id, centreData) {
+  return await axios.put(`${apiUrl}/updateCentre/${id}`, {
+    name: centreData.name,
+    email: centreData.email,
+    logo: centreData.logo,
+    status: centreData.status,
+  });
 }
 
 // ─────────────────────────────────────────
-// GET - Rechercher utilisateurs par nom
+// DELETE - Supprimer un centre
 // ─────────────────────────────────────────
-export async function searchUsers(query) {
-  return await axios.get(`${apiUrl}/searchUsers`, {
+export async function deleteCentre(id) {
+  return await axios.delete(`${apiUrl}/deleteCentre/${id}`);
+}
+
+// ─────────────────────────────────────────
+// PUT - Accepter un centre (pending → accepted)
+// ─────────────────────────────────────────
+export async function acceptCentre(id) {
+  return await axios.put(`${apiUrl}/acceptCentre/${id}`, {
+    status: "accepted",
+  });
+}
+
+// ─────────────────────────────────────────
+// PUT - Rejeter un centre (pending → rejected)
+// ─────────────────────────────────────────
+export async function rejectCentre(id) {
+  return await axios.put(`${apiUrl}/rejectCentre/${id}`, {
+    status: "rejected",
+  });
+}
+
+// ─────────────────────────────────────────
+// GET - Récupérer centres par status
+// ─────────────────────────────────────────
+export async function getCentresByStatus(status) {
+  return await axios.get(`${apiUrl}/getCentresByStatus/${status}`);
+}
+
+// ─────────────────────────────────────────
+// GET - Rechercher centres par nom
+// ─────────────────────────────────────────
+export async function searchCentres(query) {
+  return await axios.get(`${apiUrl}/searchCentres`, {
     params: { name: query },
   });
-}
-
-// ─────────────────────────────────────────
-// GET - Filtrer utilisateurs par rôle
-// ─────────────────────────────────────────
-export async function getUsersByRole(role) {
-  return await axios.get(`${apiUrl}/getUsersByRole/${role}`);
-}
-
-// ─────────────────────────────────────────
-// GET - Filtrer utilisateurs par status
-// ─────────────────────────────────────────
-export async function getUsersByStatus(isActive) {
-  return await axios.get(`${apiUrl}/getUsersByStatus`, {
-    params: { isActive },
-  });
-}
-
-// ─────────────────────────────────────────
-// PUT - Modifier le status d'un utilisateur
-// ─────────────────────────────────────────
-export async function updateUserStatus(id, isActive) {
-  return await axios.put(`${apiUrl}/updateUserStatus/${id}`, {
-    isActive,
-  });
-}
-
-// ─────────────────────────────────────────
-// PUT - Modifier le XP d'un utilisateur
-// ─────────────────────────────────────────
-export async function updateUserXP(id, xp) {
-  return await axios.put(`${apiUrl}/updateUserXP/${id}`, {
-    xp,
-  });
-}
-export async function loginUser(userData) {
-  return await axios.post(`${apiUrl}/login`, userData)
 }
