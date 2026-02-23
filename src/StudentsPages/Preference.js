@@ -116,13 +116,13 @@ export default function Preferences() {
     }
 
     alert("✅ Preferences saved successfully!");
-    history.push("/admin/dashboard");
+    history.push("/auth/login");
   };
 
   const handleSkip = () => {
     if (window.confirm("Skip preferences? You can complete them later.")) {
       localStorage.setItem("isNewUser", "false");
-      history.push("/admin/dashboard");
+      history.push("/auth/login");
     }
   };
 
@@ -604,10 +604,10 @@ export default function Preferences() {
                   >
                     <option value="">-- Select --</option>
                     <option value="Gratuit">🆓 Free only</option>
-                    <option value="Moins de 50€">💰 Less than 50€</option>
-                    <option value="50-100€">💳 50€ - 100€</option>
-                    <option value="100-300€">💎 100€ - 300€</option>
-                    <option value="300€+">🏆 More than 300€</option>
+                    <option value="Moins de 50€">💰 Less than 50DT</option>
+                    <option value="50-100€">💳 50DT - 100DT</option>
+                    <option value="100-300€">💎 100DT - 300DT</option>
+                    <option value="300€+">🏆 More than 300DT</option>
                     <option value="Illimité">♾️ No limit</option>
                   </select>
                 </div>
