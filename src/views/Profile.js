@@ -155,6 +155,7 @@ const DEFAULT_PROFILE = {
   about: "A beautiful UI Kit and Admin for React & Tailwind CSS. It is Free and Open Source.",
   skills: ["React.js", "Node.js"],
   avatar: null,
+  badges: ["🏆 Top Learner", "💎 Premium", "⭐ Star Student"],
 };
 
 const STATS = {
@@ -169,9 +170,30 @@ export default function Profile() {
   useEffect(() => {
     const saved = localStorage.getItem("studentProfile");
     if (saved) {
-      setProfile(JSON.parse(saved));
+      setProfile({ ...DEFAULT_PROFILE, ...JSON.parse(saved) });
     }
   }, []);
+
+  // ─────────────────────────────────────────
+  // Badge styles
+  // ─────────────────────────────────────────
+  const getBadgeStyle = (badgeName) => {
+    const styles = {
+      "🏆 Top Learner": "bg-amber-100 text-amber-700 border-amber-300",
+      "🚀 Fast Starter": "bg-lightBlue-100 text-lightBlue-700 border-lightBlue-300",
+      "⭐ Star Student": "bg-yellow-100 text-yellow-700 border-yellow-300",
+      "🔥 Streak Master": "bg-orange-100 text-orange-700 border-orange-300",
+      "💎 Premium": "bg-purple-100 text-purple-700 border-purple-300",
+      "🎯 Goal Achiever": "bg-emerald-100 text-emerald-700 border-emerald-300",
+      "📚 Bookworm": "bg-indigo-100 text-indigo-700 border-indigo-300",
+      "🛡️ Certified": "bg-teal-100 text-teal-700 border-teal-300",
+      "👑 Elite": "bg-red-100 text-red-700 border-red-300",
+      "💡 Innovator": "bg-pink-100 text-pink-700 border-pink-300",
+      "🤝 Team Player": "bg-cyan-100 text-cyan-700 border-cyan-300",
+      "🏅 Champion": "bg-amber-100 text-amber-800 border-amber-400",
+    };
+    return styles[badgeName] || "bg-blueGray-100 text-blueGray-700 border-blueGray-300";
+  };
 
   return (
     <>
@@ -244,11 +266,18 @@ export default function Profile() {
                         </span>
                         <span className="text-sm text-blueGray-400">XP</span>
                       </div>
-                      <div className="lg:mr-4 p-3 text-center">
+                      <div className="mr-4 p-3 text-center">
                         <span className="text-xl font-bold block uppercase tracking-wide text-blueGray-600">
                           {STATS.formationsParticipees}
                         </span>
                         <span className="text-sm text-blueGray-400">Formations</span>
+                      </div>
+                      {/* Badge count */}
+                      <div className="lg:mr-4 p-3 text-center">
+                        <span className="text-xl font-bold block uppercase tracking-wide text-blueGray-600">
+                          {profile.badges ? profile.badges.length : 0}
+                        </span>
+                        <span className="text-sm text-blueGray-400">Badges</span>
                       </div>
                     </div>
                   </div>
@@ -288,9 +317,81 @@ export default function Profile() {
                   )}
                 </div>
 
+                {/* ══════════════════════════════════════
+                    BADGES SECTION
+                   ══════════════════════════════════════ */}
+                {profile.badges && profile.badges.length > 0 && (
+                  <div className="mt-10 py-8 border-t border-blueGray-200">
+                    <div className="text-center mb-6">
+                      <h4 className="text-blueGray-500 text-sm font-bold uppercase mb-1">
+                        <i className="fas fa-award text-amber-500 mr-2"></i>
+                        Mes Badges
+                      </h4>
+                      <p className="text-xs text-blueGray-400">
+                        {profile.badges.length} badge{profile.badges.length > 1 ? "s" : ""} obtenu{profile.badges.length > 1 ? "s" : ""}
+                      </p>
+                    </div>
+
+                    {/* Badges Grid */}
+                    <div className="flex flex-wrap justify-center gap-3 px-4">
+                      {profile.badges.map((badge, index) => (
+                        <div
+                          key={index}
+                          className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 shadow-sm hover:shadow-md transition-all hover:scale-105 ${getBadgeStyle(badge)}`}
+                        >
+                          <span className="text-lg font-bold">{badge}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Badge Progress Bar */}
+                    <div className="max-w-md mx-auto mt-6 px-4">
+                      <div className="flex justify-between text-xs text-blueGray-400 mb-1">
+                        <span>Progression badges</span>
+                        <span>{profile.badges.length}/12</span>
+                      </div>
+                      <div className="w-full bg-blueGray-200 rounded-full h-2">
+                        <div
+                          className="bg-amber-500 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${(profile.badges.length / 12) * 100}%` }}
+                        ></div>
+                      </div>
+                      {profile.badges.length < 12 && (
+                        <p className="text-xs text-blueGray-400 mt-1 text-center">
+                          Plus que {12 - profile.badges.length} badge{12 - profile.badges.length > 1 ? "s" : ""} pour compléter la collection !
+                        </p>
+                      )}
+                      {profile.badges.length >= 12 && (
+                        <p className="text-xs text-emerald-500 mt-1 text-center font-bold">
+                          🎉 Collection complète ! Félicitations !
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* No Badges */}
+                {(!profile.badges || profile.badges.length === 0) && (
+                  <div className="mt-10 py-8 border-t border-blueGray-200 text-center">
+                    <h4 className="text-blueGray-500 text-sm font-bold uppercase mb-3">
+                      <i className="fas fa-award text-blueGray-300 mr-2"></i>
+                      Mes Badges
+                    </h4>
+                    <div className="text-blueGray-300 mb-3">
+                      <i className="fas fa-medal text-4xl"></i>
+                    </div>
+                    <p className="text-sm text-blueGray-400">
+                      Aucun badge pour le moment.
+                    </p>
+                    <p className="text-xs text-blueGray-300 mt-1">
+                      Continuez à apprendre pour débloquer vos premiers badges !
+                    </p>
+                  </div>
+                )}
+
                 {/* ── About ── */}
                 {profile.about && (
-                  <div className="mt-10 py-10 border-t border-blueGray-200 text-center">
+                  <div className="py-10 border-t border-blueGray-200 text-center">
                     <div className="flex flex-wrap justify-center">
                       <div className="w-full lg:w-9/12 px-4">
                         <h4 className="text-blueGray-500 text-sm font-bold uppercase mb-3">À propos</h4>

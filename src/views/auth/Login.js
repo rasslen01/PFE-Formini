@@ -1,9 +1,109 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
+import { loginUser } from "Services/ApiUser";
 
 export default function Login() {
-
+  const history = useHistory();
   const [role, setRole] = useState("student");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  // ✅ Correction : [] au lieu de {}
+  const [user, setUser] = useState({
+    email: "",
+    password: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setUser({ ...user, [name]: value });
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!user.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(user.email)) {
+      newErrors.email = "Invalid email";
+    }
+    if (!user.password) {
+      newErrors.password = "Password is required";
+    } else if (user.password.length < 6) {
+      newErrors.password = "Minimum 6 characters";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      const response = await loginUser({
+        email: user.email,
+        password: user.password,
+        role: role,
+      });
+
+      console.log("✅ Login successful:", response.data);
+
+      // Sauvegarder token et user
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      localStorage.setItem("role", role);
+
+      // Redirection selon le rôle
+      switch (role) {
+        case "admin":
+          history.push("/admin/dashboard");
+          break;
+        case "centre":
+          history.push("/centre/dashboard");
+          break;
+        case "student":
+        default:
+          history.push("/student/dashboard");
+          break;
+      }
+    } catch (error) {
+      console.error("❌ Login failed:", error);
+
+      if (error.response) {
+        switch (error.response.status) {
+          case 401:
+            setErrors({ general: "Incorrect email or password" });
+            break;
+          case 403:
+            setErrors({ general: "Access denied for this role" });
+            break;
+          case 404:
+            setErrors({ general: "Account not found" });
+            break;
+          default:
+            setErrors({ general: "Server error. Please try again." });
+        }
+      } else {
+        setErrors({ general: "Network error. Check your connection." });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    console.log("🔵 Login with Google as:", role);
+  };
+
+  const handleFacebookLogin = () => {
+    console.log("🔵 Login with Facebook as:", role);
+  };
 
   return (
     <>
@@ -12,17 +112,57 @@ export default function Login() {
           <div className="w-full lg:w-4/12 px-4">
             <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-200 border-0">
 
-              {/* Header */}
-              <div className="rounded-t mb-0 px-6 py-6 text-center">
-                <h6 className="text-blueGray-500 text-sm font-bold">
-                  Sign in with credentials
-                </h6>
+              {/* Header + Social */}
+              <div className="rounded-t mb-0 px-6 py-6">
+                <div className="text-center mb-3">
+                  <h6 className="text-blueGray-500 text-sm font-bold">
+                    Sign in with
+                  </h6>
+                </div>
+
+                <div className="btn-wrapper text-center flex justify-center gap-4">
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    className="text-blueGray-500 bg-transparent border-none font-bold text-sm px-4 py-2 rounded inline-flex items-center justify-center hover:text-red-500 hover:underline transition-all duration-150"
+                    style={{ minWidth: "150px" }}
+                  >
+                    <img
+                      alt="Google"
+                      className="w-5 mr-2"
+                      src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                    />
+                    Google
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleFacebookLogin}
+                    className="text-blueGray-500 bg-transparent border-none font-bold text-sm px-4 py-2 rounded inline-flex items-center justify-center hover:text-blue-600 hover:underline transition-all duration-150"
+                    style={{ minWidth: "150px" }}
+                  >
+                    <i className="fab fa-facebook-f text-blue-600 mr-2 text-lg"></i>
+                    Facebook
+                  </button>
+                </div>
+
                 <hr className="mt-6 border-b-1 border-blueGray-300" />
               </div>
 
               {/* Form */}
               <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
-                <form>
+                <div className="text-blueGray-400 text-center mb-3 font-bold">
+                  <small>Or sign in with credentials</small>
+                </div>
+
+                {/* Error */}
+                {errors.general && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+                    <i className="fas fa-exclamation-circle mr-2"></i>
+                    {errors.general}
+                  </div>
+                )}
+
+                <form onSubmit={handleLogin}>
 
                   {/* Email */}
                   <div className="relative w-full mb-3">
@@ -31,9 +171,21 @@ export default function Login() {
                     </label>
                     <input
                       type="email"
-                      className="border-0 px-3 py-3 bg-white rounded text-sm shadow w-full"
+                      name="email"
+                      value={user.email}
+                      onChange={handleChange}
+                      className={`border-0 px-3 py-3 bg-white rounded text-sm shadow w-full focus:outline-none focus:ring ${
+                        errors.email ? "ring-2 ring-red-500" : ""
+                      }`}
                       placeholder="Email"
+                      required
                     />
+                    {errors.email && (
+                      <p className="text-red-500 text-xs mt-1">
+                        <i className="fas fa-exclamation-triangle mr-1"></i>
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
 
                   {/* Password */}
@@ -43,19 +195,29 @@ export default function Login() {
                     </label>
                     <input
                       type="password"
-                      className="border-0 px-3 py-3 bg-white rounded text-sm shadow w-full"
+                      name="password"
+                      value={user.password}
+                      onChange={handleChange}
+                      className={`border-0 px-3 py-3 bg-white rounded text-sm shadow w-full focus:outline-none focus:ring ${
+                        errors.password ? "ring-2 ring-red-500" : ""
+                      }`}
                       placeholder="Password"
+                      required
                     />
+                    {errors.password && (
+                      <p className="text-red-500 text-xs mt-1">
+                        <i className="fas fa-exclamation-triangle mr-1"></i>
+                        {errors.password}
+                      </p>
+                    )}
                   </div>
 
-                  {/* ROLE SELECTION */}
+                  {/* Role Selection */}
                   <div className="mt-4 mb-4">
                     <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                       Login as
                     </label>
-
                     <div className="flex justify-between text-sm text-blueGray-600">
-
                       <label className="inline-flex items-center cursor-pointer">
                         <input
                           type="radio"
@@ -63,11 +225,13 @@ export default function Login() {
                           value="student"
                           checked={role === "student"}
                           onChange={() => setRole("student")}
-                          className="form-radio text-blueGray-700"
+                          className="form-radio text-lightBlue-500"
                         />
-                        <span className="ml-2">Student</span>
+                        <span className="ml-2">
+                          <i className="fas fa-user-graduate mr-1"></i>
+                          Student
+                        </span>
                       </label>
-
                       <label className="inline-flex items-center cursor-pointer">
                         <input
                           type="radio"
@@ -75,11 +239,13 @@ export default function Login() {
                           value="admin"
                           checked={role === "admin"}
                           onChange={() => setRole("admin")}
-                          className="form-radio text-blueGray-700"
+                          className="form-radio text-orange-500"
                         />
-                        <span className="ml-2">Admin</span>
+                        <span className="ml-2">
+                          <i className="fas fa-user-shield mr-1"></i>
+                          Admin
+                        </span>
                       </label>
-
                       <label className="inline-flex items-center cursor-pointer">
                         <input
                           type="radio"
@@ -87,11 +253,13 @@ export default function Login() {
                           value="centre"
                           checked={role === "centre"}
                           onChange={() => setRole("centre")}
-                          className="form-radio text-blueGray-700"
+                          className="form-radio text-purple-500"
                         />
-                        <span className="ml-2">Centre</span>
+                        <span className="ml-2">
+                          <i className="fas fa-building mr-1"></i>
+                          Centre
+                        </span>
                       </label>
-
                     </div>
                   </div>
 
@@ -111,11 +279,23 @@ export default function Login() {
                   {/* Submit */}
                   <div className="text-center mt-6">
                     <button
-                      className="bg-blueGray-800 text-white text-sm font-bold uppercase px-6 py-3 rounded shadow w-full"
-                      type="button"
-                      onClick={() => console.log("Login as:", role)}
+                      type="submit"
+                      disabled={isLoading}
+                      className={`bg-blueGray-800 text-white text-sm font-bold uppercase px-6 py-3 rounded shadow w-full hover:shadow-lg transition-all duration-150 ${
+                        isLoading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                     >
-                      Sign In
+                      {isLoading ? (
+                        <>
+                          <i className="fas fa-spinner fa-spin mr-2"></i>
+                          Signing in...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-sign-in-alt mr-2"></i>
+                          Sign In as {role.charAt(0).toUpperCase() + role.slice(1)}
+                        </>
+                      )}
                     </button>
                   </div>
 
