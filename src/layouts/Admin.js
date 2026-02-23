@@ -17,6 +17,8 @@ import Tables from "views/admin/Tables.js";
 import GestionDesUtilisateurs from "views/admin/GestionDesUtilisateurs"
 import GestionDesCentres from "views/admin/GestionDesCentres"
 import GestionDesFormations from "views/admin/GestionDesFormations"
+import GestionDesBadges from "views/admin/GestionDesBadges"
+import logs from "views/admin/logs"
 
 
 export default function Admin() {
@@ -36,6 +38,8 @@ export default function Admin() {
             <Route path="/admin/GestionDesUtilisateurs" exact component={GestionDesUtilisateurs} />
             <Route path="/admin/GestionDesCentres" exact component={GestionDesCentres} />
             <Route path="/admin/GestionDesFormations" exact component={GestionDesFormations} />
+            <Route path="/admin/GestionDesBadges" exact component={GestionDesBadges} />
+            <Route path="/admin/logs" exact component={logs} />
 
             <Redirect from="/admin" to="/admin/dashboard" />
           </Switch>
