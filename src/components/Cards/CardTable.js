@@ -1,13 +1,27 @@
+// ═══════════════════════════════════════════════
+// 📁 src/components/Cards/CardTable.js
+// Mode hybride : API si backend dispo, sinon local
+// ═══════════════════════════════════════════════
+
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
+import {
+  getAllUsers,
+  addUser as addUserApi,
+  updateUser as updateUserApi,
+  deleteUser as deleteUserApi,
+} from "Services/ApiUser";
 
 export default function CardTable({ color }) {
   const [users, setUsers] = useState([]);
   const [roleFilter, setRoleFilter] = useState("ALL");
-  const [statusFilter, setStatusFilter] = useState("ALL"); // ← Nouveau state pour le filtre status
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [useLocalMode, setUseLocalMode] = useState(false);
 
-  // Modal unique
+  // Modal
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("add");
   const [formUser, setFormUser] = useState({
@@ -19,52 +33,59 @@ export default function CardTable({ color }) {
     isActive: true,
   });
 
-  // Fake data initial
+  // ─────────────────────────────────────────
+  // Fake data (fallback si pas de backend)
+  // ─────────────────────────────────────────
+  const fakeUsers = [
+    { _id: "1", name: "Ali Ben Ahmed", email: "ali@test.com", role: "ADMIN", xp: 120, isActive: true },
+    { _id: "2", name: "Sara Mansouri", email: "sara@test.com", role: "STUDENT", xp: 50, isActive: false },
+    { _id: "3", name: "Mohamed Karim", email: "mohamed@test.com", role: "CENTRE", xp: 80, isActive: true },
+    { _id: "4", name: "Fatima Zahra", email: "fatima@test.com", role: "STUDENT", xp: 30, isActive: false },
+    { _id: "5", name: "Youssef Alami", email: "youssef@test.com", role: "ADMIN", xp: 200, isActive: true },
+  ];
+
+  // ─────────────────────────────────────────
+  // Fetch users (API ou Local)
+  // ─────────────────────────────────────────
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getAllUsers();
+      setUsers(res.data);
+      setUseLocalMode(false);
+    } catch (err) {
+      console.warn("⚠️ Backend non disponible, mode local activé");
+      setUseLocalMode(true);
+
+      // Charger depuis localStorage ou fake data
+      const saved = localStorage.getItem("localUsers");
+      if (saved) {
+        setUsers(JSON.parse(saved));
+      } else {
+        setUsers(fakeUsers);
+        localStorage.setItem("localUsers", JSON.stringify(fakeUsers));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setUsers([
-      {
-        _id: "1",
-        name: "Ali Ben Ahmed",
-        email: "ali@test.com",
-        role: "ADMIN",
-        xp: 120,
-        isActive: true,
-      },
-      {
-        _id: "2",
-        name: "Sara Mansouri",
-        email: "sara@test.com",
-        role: "STUDENT",
-        xp: 50,
-        isActive: false,
-      },
-      {
-        _id: "3",
-        name: "Mohamed Karim",
-        email: "mohamed@test.com",
-        role: "CENTRE",
-        xp: 80,
-        isActive: true,
-      },
-      {
-        _id: "4",
-        name: "Fatima Zahra",
-        email: "fatima@test.com",
-        role: "STUDENT",
-        xp: 30,
-        isActive: false,
-      },
-      {
-        _id: "5",
-        name: "Youssef Alami",
-        email: "youssef@test.com",
-        role: "ADMIN",
-        xp: 200,
-        isActive: true,
-      },
-    ]);
+    fetchUsers();
   }, []);
 
+  // ─────────────────────────────────────────
+  // Sauvegarder en local
+  // ─────────────────────────────────────────
+  const saveToLocal = (updatedUsers) => {
+    setUsers(updatedUsers);
+    localStorage.setItem("localUsers", JSON.stringify(updatedUsers));
+  };
+
+  // ─────────────────────────────────────────
+  // Open Modals
+  // ─────────────────────────────────────────
   const openAddModal = () => {
     setModalType("add");
     setFormUser({
@@ -84,43 +105,86 @@ export default function CardTable({ color }) {
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (modalType === "add") {
-      const user = { ...formUser, _id: Date.now().toString() };
-      setUsers([...users, user]);
-    } else {
-      setUsers(users.map((u) => (u._id === formUser._id ? formUser : u)));
+  // ─────────────────────────────────────────
+  // Save (API ou Local)
+  // ─────────────────────────────────────────
+  const handleSave = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      if (useLocalMode) {
+        // ══════════════════════════════
+        // MODE LOCAL (sans backend)
+        // ══════════════════════════════
+        if (modalType === "add") {
+          const newUser = { ...formUser, _id: Date.now().toString() };
+          saveToLocal([...users, newUser]);
+        } else {
+          saveToLocal(
+            users.map((u) => (u._id === formUser._id ? formUser : u))
+          );
+        }
+      } else {
+        // ══════════════════════════════
+        // MODE API (avec backend)
+        // ══════════════════════════════
+        if (modalType === "add") {
+          await addUserApi(formUser);
+        } else {
+          await updateUserApi(formUser._id, formUser);
+        }
+        await fetchUsers();
+      }
+
+      setShowModal(false);
+    } catch (err) {
+      setError("Erreur lors de la sauvegarde");
+      console.error("Save error:", err);
+    } finally {
+      setLoading(false);
     }
-    setShowModal(false);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Supprimer cet utilisateur ?")) {
-      setUsers(users.filter((u) => u._id !== id));
+  // ─────────────────────────────────────────
+  // Delete (API ou Local)
+  // ─────────────────────────────────────────
+  const handleDelete = async (id) => {
+    if (!window.confirm("Supprimer cet utilisateur ?")) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      if (useLocalMode) {
+        saveToLocal(users.filter((u) => u._id !== id));
+      } else {
+        await deleteUserApi(id);
+        await fetchUsers();
+      }
+    } catch (err) {
+      setError("Erreur lors de la suppression");
+      console.error("Delete error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ─────────────────────────────────────────────────────
-  // Filtrage combiné : recherche + rôle + status
-  // ─────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
+  // Filtres
+  // ─────────────────────────────────────────
   const filteredUsers = users.filter((u) => {
     const matchesSearch = u.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase().trim());
-
     const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
-
     const matchesStatus =
       statusFilter === "ALL" ||
       (statusFilter === "ACTIVE" && u.isActive === true) ||
       (statusFilter === "SUSPENDED" && u.isActive === false);
-
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  // ─────────────────────────────────────────────────────
-  // Réinitialiser tous les filtres
-  // ─────────────────────────────────────────────────────
   const resetFilters = () => {
     setSearchQuery("");
     setRoleFilter("ALL");
@@ -138,14 +202,48 @@ export default function CardTable({ color }) {
           (color === "light" ? "bg-white" : "bg-lightBlue-900 text-white")
         }
       >
+        {/* Mode Indicator */}
+        {useLocalMode && (
+          <div className="bg-amber-100 border-b border-amber-200 text-amber-700 px-4 py-2 text-xs flex items-center justify-between">
+            <span>
+              <i className="fas fa-exclamation-triangle mr-2"></i>
+              Mode local activé (backend non disponible). Les données sont sauvegardées dans le navigateur.
+            </span>
+            <button
+              onClick={fetchUsers}
+              className="text-amber-700 hover:text-amber-900 font-bold"
+            >
+              <i className="fas fa-sync-alt mr-1"></i>
+              Réessayer
+            </button>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border-b border-red-200 text-red-700 px-4 py-2 text-xs flex justify-between items-center">
+            <span>
+              <i className="fas fa-exclamation-circle mr-2"></i>
+              {error}
+            </span>
+            <button onClick={() => setError("")} className="text-red-500 hover:text-red-700">
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-          <h3 className="font-semibold text-lg">Gestion des utilisateurs</h3>
+          <h3 className="font-semibold text-lg">
+            Gestion des utilisateurs
+            {useLocalMode && (
+              <span className="ml-2 text-xs font-normal text-amber-500">
+                (local)
+              </span>
+            )}
+          </h3>
 
           <div className="flex flex-wrap gap-2 items-center">
-            {/* ══════════════════════════════
-                 Barre de recherche par nom
-               ══════════════════════════════ */}
             <div className="relative">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blueGray-400">
                 <i className="fas fa-search"></i>
@@ -155,22 +253,18 @@ export default function CardTable({ color }) {
                 placeholder="Rechercher par nom..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="border rounded px-3 py-2 pl-9 w-64 text-sm focus:outline-none focus:ring-2 focus:ring-lightBlue-500 focus:border-transparent transition-all"
+                className="border rounded px-3 py-2 pl-9 w-64 text-sm focus:outline-none focus:ring-2 focus:ring-lightBlue-500 transition-all"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
                   className="absolute inset-y-0 right-0 flex items-center pr-3 text-blueGray-400 hover:text-red-500"
-                  title="Effacer"
                 >
                   <i className="fas fa-times"></i>
                 </button>
               )}
             </div>
 
-            {/* ══════════════════════════════
-                 Filtre par rôle
-               ══════════════════════════════ */}
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
@@ -182,9 +276,6 @@ export default function CardTable({ color }) {
               <option value="STUDENT">Student</option>
             </select>
 
-            {/* ══════════════════════════════
-                 Filtre par status
-               ══════════════════════════════ */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -195,14 +286,10 @@ export default function CardTable({ color }) {
               <option value="SUSPENDED">🔴 Suspendu</option>
             </select>
 
-            {/* ══════════════════════════════
-                 Bouton réinitialiser filtres
-               ══════════════════════════════ */}
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
-                className="bg-blueGray-200 text-blueGray-700 px-3 py-2 rounded text-sm hover:bg-blueGray-300 transition-all"
-                title="Réinitialiser les filtres"
+                className="bg-blueGray-200 text-blueGray-700 px-3 py-2 rounded text-sm hover:bg-blueGray-300"
               >
                 <i className="fas fa-undo mr-1"></i>
                 Réinitialiser
@@ -211,60 +298,45 @@ export default function CardTable({ color }) {
 
             <button
               onClick={openAddModal}
-              className="bg-emerald-500 text-white px-4 py-2 rounded text-sm font-bold"
+              className="bg-emerald-500 text-white px-4 py-2 rounded text-sm font-bold hover:bg-emerald-600"
             >
               + Ajouter
             </button>
           </div>
         </div>
 
-        {/* ══════════════════════════════════════
-            Badges des filtres actifs
-           ══════════════════════════════════════ */}
+        {/* Filter Badges */}
         {hasActiveFilters && (
           <div className="px-4 pb-2 flex flex-wrap gap-2">
             {searchQuery && (
               <span className="bg-lightBlue-100 text-lightBlue-700 text-xs px-3 py-1 rounded-full flex items-center gap-1">
                 <i className="fas fa-search text-xs"></i>
                 Nom : "{searchQuery}"
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="ml-1 hover:text-red-500"
-                >
-                  ×
-                </button>
+                <button onClick={() => setSearchQuery("")} className="ml-1 hover:text-red-500">×</button>
               </span>
             )}
             {roleFilter !== "ALL" && (
               <span className="bg-amber-100 text-amber-700 text-xs px-3 py-1 rounded-full flex items-center gap-1">
-                <i className="fas fa-user-tag text-xs"></i>
                 Rôle : {roleFilter}
-                <button
-                  onClick={() => setRoleFilter("ALL")}
-                  className="ml-1 hover:text-red-500"
-                >
-                  ×
-                </button>
+                <button onClick={() => setRoleFilter("ALL")} className="ml-1 hover:text-red-500">×</button>
               </span>
             )}
             {statusFilter !== "ALL" && (
-              <span
-                className={`text-xs px-3 py-1 rounded-full flex items-center gap-1 ${
-                  statusFilter === "ACTIVE"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-red-100 text-red-700"
-                }`}
-              >
-                <i className="fas fa-circle text-xs"></i>
+              <span className={`text-xs px-3 py-1 rounded-full flex items-center gap-1 ${
+                statusFilter === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+              }`}>
                 Status : {statusFilter === "ACTIVE" ? "Actif" : "Suspendu"}
-                <button
-                  onClick={() => setStatusFilter("ALL")}
-                  className="ml-1 hover:text-red-500"
-                >
-                  ×
-                </button>
+                <button onClick={() => setStatusFilter("ALL")} className="ml-1 hover:text-red-500">×</button>
               </span>
             )}
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div className="px-4 py-2 text-center text-lightBlue-500 text-sm">
+            <i className="fas fa-spinner fa-spin mr-2"></i>
+            Chargement...
           </div>
         )}
 
@@ -273,59 +345,43 @@ export default function CardTable({ color }) {
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                {["Nom", "Email", "Rôle", "XP", "Status", "Actions"].map(
-                  (h, i) => (
-                    <th
-                      key={i}
-                      className="px-6 py-3 text-left bg-blueGray-50 text-blueGray-500 text-xs uppercase"
-                    >
-                      {h}
-                    </th>
-                  )
-                )}
+                {["Nom", "Email", "Rôle", "XP", "Status", "Actions"].map((h, i) => (
+                  <th key={i} className="px-6 py-3 text-left bg-blueGray-50 text-blueGray-500 text-xs uppercase">{h}</th>
+                ))}
               </tr>
             </thead>
-
             <tbody>
               {filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => (
-                  <tr key={user._id} className="hover:bg-gray-100">
+                  <tr key={user._id} className="hover:bg-gray-100 border-b">
                     <td className="px-6 py-4">{user.name}</td>
                     <td className="px-6 py-4">{user.email}</td>
                     <td className="px-6 py-4">
-                      <span
-                        className={`text-xs font-bold px-2 py-1 rounded-full ${
-                          user.role === "ADMIN"
-                            ? "bg-orange-100 text-orange-700"
-                            : user.role === "CENTRE"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-lightBlue-100 text-lightBlue-700"
-                        }`}
-                      >
-                        {user.role}
-                      </span>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                        user.role === "ADMIN" ? "bg-orange-100 text-orange-700"
+                        : user.role === "CENTRE" ? "bg-purple-100 text-purple-700"
+                        : "bg-lightBlue-100 text-lightBlue-700"
+                      }`}>{user.role}</span>
                     </td>
                     <td className="px-6 py-4">{user.xp}</td>
                     <td className="px-6 py-4">
                       {user.isActive ? (
-                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
-                          ✅ Actif
-                        </span>
+                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">✅ Actif</span>
                       ) : (
-                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-red-100 text-red-700">
-                          🔴 Suspendu
-                        </span>
+                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-red-100 text-red-700">🔴 Suspendu</span>
                       )}
                     </td>
                     <td className="px-6 py-4 flex gap-2">
                       <button
                         onClick={() => openEditModal(user)}
+                        disabled={loading}
                         className="bg-lightBlue-500 text-white font-bold uppercase text-sm px-4 py-2 rounded shadow hover:shadow-lg transition-all"
                       >
                         Modifier
                       </button>
                       <button
                         onClick={() => handleDelete(user._id)}
+                        disabled={loading}
                         className="bg-red-500 text-white font-bold uppercase text-sm px-4 py-2 rounded shadow hover:shadow-lg transition-all"
                       >
                         Supprimer
@@ -335,28 +391,9 @@ export default function CardTable({ color }) {
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan="6"
-                    className="px-6 py-8 text-center text-blueGray-400"
-                  >
+                  <td colSpan="6" className="px-6 py-8 text-center text-blueGray-400">
                     <i className="fas fa-user-slash text-2xl mb-2 block"></i>
                     Aucun utilisateur trouvé
-                    {searchQuery && (
-                      <span>
-                        {" "}
-                        pour "<strong>{searchQuery}</strong>"
-                      </span>
-                    )}
-                    {statusFilter !== "ALL" && (
-                      <span>
-                        {" "}
-                        avec status "
-                        <strong>
-                          {statusFilter === "ACTIVE" ? "Actif" : "Suspendu"}
-                        </strong>
-                        "
-                      </span>
-                    )}
                   </td>
                 </tr>
               )}
@@ -364,96 +401,56 @@ export default function CardTable({ color }) {
           </table>
         </div>
 
-        {/* Footer : compteur de résultats */}
+        {/* Footer */}
         <div className="px-4 py-2 text-sm text-blueGray-400 border-t flex justify-between items-center">
-          <span>
-            {filteredUsers.length} résultat(s) sur {users.length} utilisateur(s)
+          <span>{filteredUsers.length} résultat(s) sur {users.length} utilisateur(s)</span>
+          <span className="text-xs">
+            <i className={`fas fa-circle mr-1 ${useLocalMode ? "text-amber-500" : "text-emerald-500"}`}></i>
+            {useLocalMode ? "Local" : "API"}
           </span>
-          {hasActiveFilters && (
-            <span className="text-xs text-blueGray-300">
-              <i className="fas fa-filter mr-1"></i>
-              Filtres actifs
-            </span>
-          )}
         </div>
       </div>
 
-      {/* Modal Unique (Add + Edit) */}
+      {/* Modal */}
       {showModal && (
         <>
           <div className="modal-backdrop"></div>
-
           <div className="modal-container">
             <h3 className="text-xl font-semibold mb-4">
-              {modalType === "add"
-                ? "Ajouter utilisateur"
-                : "Modifier utilisateur"}
+              {modalType === "add" ? "Ajouter utilisateur" : "Modifier utilisateur"}
             </h3>
-
             <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Nom"
-                value={formUser.name}
-                onChange={(e) =>
-                  setFormUser({ ...formUser, name: e.target.value })
-                }
-                className="border rounded px-3 py-2 w-full md:col-span-2"
-              />
-
-              <input
-                type="email"
-                placeholder="Email"
-                value={formUser.email}
-                onChange={(e) =>
-                  setFormUser({ ...formUser, email: e.target.value })
-                }
-                className="border rounded px-3 py-2 w-full md:col-span-2"
-              />
-
-              <select
-                value={formUser.role}
-                onChange={(e) =>
-                  setFormUser({ ...formUser, role: e.target.value })
-                }
-                className="border rounded px-3 py-2 w-full md:col-span-2"
-              >
+              <input type="text" placeholder="Nom" value={formUser.name}
+                onChange={(e) => setFormUser({ ...formUser, name: e.target.value })}
+                className="border rounded px-3 py-2 w-full md:col-span-2" />
+              <input type="email" placeholder="Email" value={formUser.email}
+                onChange={(e) => setFormUser({ ...formUser, email: e.target.value })}
+                className="border rounded px-3 py-2 w-full md:col-span-2" />
+              <select value={formUser.role}
+                onChange={(e) => setFormUser({ ...formUser, role: e.target.value })}
+                className="border rounded px-3 py-2 w-full">
                 <option value="ADMIN">Admin</option>
                 <option value="CENTRE">Centre</option>
                 <option value="STUDENT">Student</option>
               </select>
-
-              {/* ══════════════════════════════════════
-                   Status dans le formulaire modal
-                 ══════════════════════════════════════ */}
-              <select
-                value={formUser.isActive ? "true" : "false"}
-                onChange={(e) =>
-                  setFormUser({
-                    ...formUser,
-                    isActive: e.target.value === "true",
-                  })
-                }
-                className="border rounded px-3 py-2 w-full md:col-span-2"
-              >
+              <input type="number" placeholder="XP" value={formUser.xp}
+                onChange={(e) => setFormUser({ ...formUser, xp: Number(e.target.value) })}
+                min="0" className="border rounded px-3 py-2 w-full" />
+              <select value={formUser.isActive ? "true" : "false"}
+                onChange={(e) => setFormUser({ ...formUser, isActive: e.target.value === "true" })}
+                className="border rounded px-3 py-2 w-full md:col-span-2">
                 <option value="true">✅ Actif</option>
                 <option value="false">🔴 Suspendu</option>
               </select>
             </div>
-
             <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowModal(false)}
-                className="bg-red-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-              >
+              <button onClick={() => setShowModal(false)} disabled={loading}
+                className="bg-red-500 text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all">
                 Annuler
               </button>
-
-              <button
-                onClick={handleSave}
-                className="bg-emerald-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-              >
-                Enregistrer
+              <button onClick={handleSave} disabled={loading}
+                className="bg-emerald-500 text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all">
+                {loading ? <><i className="fas fa-spinner fa-spin mr-2"></i>Saving...</> : "Enregistrer"}
               </button>
             </div>
           </div>
@@ -463,10 +460,5 @@ export default function CardTable({ color }) {
   );
 }
 
-CardTable.defaultProps = {
-  color: "light",
-};
-
-CardTable.propTypes = {
-  color: PropTypes.oneOf(["light", "dark"]),
-};
+CardTable.defaultProps = { color: "light" };
+CardTable.propTypes = { color: PropTypes.oneOf(["light", "dark"]) };

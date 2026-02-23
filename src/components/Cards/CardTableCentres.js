@@ -1,263 +1,490 @@
+// ═══════════════════════════════════════════════
+// 📁 src/components/Cards/CardTableCentres.js
+// ═══════════════════════════════════════════════
+
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
+import {
+  getAllCentres,
+  addCentre as addCentreApi,
+  updateCentre as updateCentreApi,
+  deleteCentre as deleteCentreApi,
+  acceptCentre as acceptCentreApi,
+} from "Services/ApiCentre";
 
 export default function CardTableCentres({ color }) {
   const [centres, setCentres] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState("edit");
   const [selectedCentre, setSelectedCentre] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [useLocalMode, setUseLocalMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
-  // Fake data
+  // Fake data fallback
+  const fakeCentres = [
+    { _id: "1", name: "Centre IT", email: "it@centre.com", status: "pending", logo: "https://via.placeholder.com/80" },
+    { _id: "2", name: "Centre Design", email: "design@centre.com", status: "accepted", logo: "https://via.placeholder.com/80" },
+    { _id: "3", name: "Centre Marketing", email: "marketing@centre.com", status: "pending", logo: "https://via.placeholder.com/80" },
+    { _id: "4", name: "Centre Data", email: "data@centre.com", status: "rejected", logo: "https://via.placeholder.com/80" },
+  ];
+
+  // ─────────────────────────────────────────
+  // Fetch centres
+  // ─────────────────────────────────────────
+  const fetchCentres = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getAllCentres();
+      setCentres(res.data);
+      setUseLocalMode(false);
+    } catch (err) {
+      console.warn("⚠️ Backend non disponible, mode local activé");
+      setUseLocalMode(true);
+      const saved = localStorage.getItem("localCentres");
+      if (saved) {
+        setCentres(JSON.parse(saved));
+      } else {
+        setCentres(fakeCentres);
+        localStorage.setItem("localCentres", JSON.stringify(fakeCentres));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setCentres([
-      {
-        id: 1,
-        name: "Centre IT",
-        email: "it@centre.com",
-        status: "pending",
-        logo: "https://via.placeholder.com/80",
-      },
-      {
-        id: 2,
-        name: "Centre Design",
-        email: "design@centre.com",
-        status: "accepted",
-        logo: "https://via.placeholder.com/80",
-      },
-    ]);
+    fetchCentres();
   }, []);
 
-  const handleDelete = (id) => {
-    setCentres(centres.filter((c) => c.id !== id));
+  // ─────────────────────────────────────────
+  // Save to local
+  // ─────────────────────────────────────────
+  const saveToLocal = (updatedCentres) => {
+    setCentres(updatedCentres);
+    localStorage.setItem("localCentres", JSON.stringify(updatedCentres));
   };
 
-  const handleAccept = (id) => {
-    setCentres(
-      centres.map((c) =>
-        c.id === id ? { ...c, status: "accepted" } : c
-      )
-    );
+  // ─────────────────────────────────────────
+  // Open Add Modal
+  // ─────────────────────────────────────────
+  const openAddModal = () => {
+    setModalType("add");
+    setSelectedCentre({
+      _id: "",
+      name: "",
+      email: "",
+      logo: "https://via.placeholder.com/80",
+      status: "pending",
+    });
+    setShowModal(true);
   };
 
-  const handleSave = () => {
-    setCentres(
-      centres.map((c) =>
-        c.id === selectedCentre.id ? selectedCentre : c
-      )
-    );
-    setShowModal(false);
+  // ─────────────────────────────────────────
+  // Open Edit Modal
+  // ─────────────────────────────────────────
+  const openEditModal = (centre) => {
+    setModalType("edit");
+    setSelectedCentre({ ...centre });
+    setShowModal(true);
   };
+
+  // ─────────────────────────────────────────
+  // Save (Add or Edit)
+  // ─────────────────────────────────────────
+  const handleSave = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      if (useLocalMode) {
+        if (modalType === "add") {
+          const newCentre = { ...selectedCentre, _id: Date.now().toString() };
+          saveToLocal([...centres, newCentre]);
+        } else {
+          saveToLocal(
+            centres.map((c) => (c._id === selectedCentre._id ? selectedCentre : c))
+          );
+        }
+      } else {
+        if (modalType === "add") {
+          await addCentreApi(selectedCentre);
+        } else {
+          await updateCentreApi(selectedCentre._id, selectedCentre);
+        }
+        await fetchCentres();
+      }
+      setShowModal(false);
+    } catch (err) {
+      setError("Erreur lors de la sauvegarde");
+      console.error("Save error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Delete
+  // ─────────────────────────────────────────
+  const handleDelete = async (id) => {
+    if (!window.confirm("Supprimer ce centre ?")) return;
+    setLoading(true);
+    setError("");
+    try {
+      if (useLocalMode) {
+        saveToLocal(centres.filter((c) => c._id !== id));
+      } else {
+        await deleteCentreApi(id);
+        await fetchCentres();
+      }
+    } catch (err) {
+      setError("Erreur lors de la suppression");
+      console.error("Delete error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Accept
+  // ─────────────────────────────────────────
+  const handleAccept = async (id) => {
+    setLoading(true);
+    setError("");
+    try {
+      if (useLocalMode) {
+        saveToLocal(
+          centres.map((c) => (c._id === id ? { ...c, status: "accepted" } : c))
+        );
+      } else {
+        await acceptCentreApi(id);
+        await fetchCentres();
+      }
+    } catch (err) {
+      setError("Erreur lors de l'acceptation");
+      console.error("Accept error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Reject
+  // ─────────────────────────────────────────
+  const handleReject = async (id) => {
+    if (!window.confirm("Rejeter ce centre ?")) return;
+    setLoading(true);
+    try {
+      if (useLocalMode) {
+        saveToLocal(
+          centres.map((c) => (c._id === id ? { ...c, status: "rejected" } : c))
+        );
+      } else {
+        await updateCentreApi(id, { status: "rejected" });
+        await fetchCentres();
+      }
+    } catch (err) {
+      setError("Erreur lors du rejet");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Filter
+  // ─────────────────────────────────────────
+  const filteredCentres = centres.filter((c) => {
+    const matchSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchStatus = statusFilter === "ALL" || c.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  // ─────────────────────────────────────────
+  // Status styles
+  // ─────────────────────────────────────────
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case "accepted": return "bg-emerald-100 text-emerald-700";
+      case "pending": return "bg-amber-100 text-amber-700";
+      case "rejected": return "bg-red-100 text-red-700";
+      default: return "bg-blueGray-100 text-blueGray-700";
+    }
+  };
+
+  // Counts
+  const pendingCount = centres.filter((c) => c.status === "pending").length;
+  const acceptedCount = centres.filter((c) => c.status === "accepted").length;
+  const rejectedCount = centres.filter((c) => c.status === "rejected").length;
 
   return (
     <>
-      {/* TABLE */}
       <div
         className={
           "relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded " +
-          (color === "light"
-            ? "bg-white"
-            : "bg-lightBlue-900 text-white")
+          (color === "light" ? "bg-white" : "bg-lightBlue-900 text-white")
         }
       >
-        <div className="rounded-t mb-0 px-4 py-3 border-0">
-          <h3
-            className={
-              "font-semibold text-lg " +
-              (color === "light"
-                ? "text-blueGray-700"
-                : "text-white")
-            }
-          >
-            Gestion des Centres
-          </h3>
+        {/* Mode local indicator */}
+        {useLocalMode && (
+          <div className="bg-amber-100 border-b border-amber-200 text-amber-700 px-4 py-2 text-xs flex justify-between items-center">
+            <span>
+              <i className="fas fa-exclamation-triangle mr-2"></i>
+              Mode local activé (backend non disponible)
+            </span>
+            <button onClick={fetchCentres} className="font-bold hover:text-amber-900">
+              <i className="fas fa-sync-alt mr-1"></i>Réessayer
+            </button>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-100 border-b border-red-200 text-red-700 px-4 py-2 text-xs flex justify-between items-center">
+            <span><i className="fas fa-exclamation-circle mr-2"></i>{error}</span>
+            <button onClick={() => setError("")}><i className="fas fa-times"></i></button>
+          </div>
+        )}
+
+        {/* Stats */}
+        <div className="px-4 pt-3 flex flex-wrap gap-3">
+          <span className="text-xs bg-blueGray-100 text-blueGray-600 px-3 py-1 rounded-full font-bold">
+            Total: {centres.length}
+          </span>
+          <span className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold">
+            <i className="fas fa-clock mr-1"></i>Pending: {pendingCount}
+          </span>
+          <span className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-bold">
+            <i className="fas fa-check mr-1"></i>Acceptés: {acceptedCount}
+          </span>
+          <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-bold">
+            <i className="fas fa-times mr-1"></i>Rejetés: {rejectedCount}
+          </span>
         </div>
 
+        {/* Header */}
+        <div className="rounded-t mb-0 px-4 py-3 border-0">
+          <div className="flex flex-wrap justify-between items-center gap-3">
+            <h3 className={`font-semibold text-lg ${color === "light" ? "text-blueGray-700" : "text-white"}`}>
+              Gestion des Centres
+              {useLocalMode && <span className="ml-2 text-xs font-normal text-amber-500">(local)</span>}
+            </h3>
+
+            <div className="flex flex-wrap gap-2 items-center">
+              {/* Search */}
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blueGray-400">
+                  <i className="fas fa-search"></i>
+                </span>
+                <input
+                  type="text"
+                  placeholder="Rechercher..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="border rounded px-3 py-2 pl-9 w-48 text-sm focus:outline-none focus:ring-2 focus:ring-lightBlue-500"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="border px-3 py-2 rounded text-sm"
+              >
+                <option value="ALL">Tous les statuts</option>
+                <option value="pending">⏳ Pending</option>
+                <option value="accepted">✅ Accepté</option>
+                <option value="rejected">❌ Rejeté</option>
+              </select>
+
+              {/* Add button */}
+              <button
+                onClick={openAddModal}
+                className="bg-emerald-500 text-white px-4 py-2 rounded text-sm font-bold hover:bg-emerald-600"
+              >
+                <i className="fas fa-plus mr-1"></i>Ajouter
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading */}
+        {loading && (
+          <div className="px-4 py-2 text-center text-lightBlue-500 text-sm">
+            <i className="fas fa-spinner fa-spin mr-2"></i>Chargement...
+          </div>
+        )}
+
+        {/* Table */}
         <div className="block w-full overflow-x-auto">
           <table className="items-center w-full bg-transparent border-collapse">
             <thead>
               <tr>
-                {["Logo", "Nom", "Email", "Statut", "Actions"].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className={
-                        "px-6 py-3 text-xs uppercase font-semibold text-left border-b " +
-                        (color === "light"
-                          ? "bg-blueGray-50 text-blueGray-500"
-                          : "bg-lightBlue-800 text-lightBlue-300")
-                      }
-                    >
-                      {h}
-                    </th>
-                  )
-                )}
+                {["Logo", "Nom", "Email", "Statut", "Actions"].map((h) => (
+                  <th key={h} className={`px-6 py-3 text-xs uppercase font-semibold text-left border-b ${
+                    color === "light" ? "bg-blueGray-50 text-blueGray-500" : "bg-lightBlue-800 text-lightBlue-300"
+                  }`}>{h}</th>
+                ))}
               </tr>
             </thead>
-
             <tbody>
-              {centres.map((centre) => (
-                <tr key={centre.id}>
-                  <td className="px-6 py-4">
-                    <img
-                      src={centre.logo}
-                      alt="logo"
-                      className="h-10 w-10 rounded-full border"
-                    />
-                  </td>
-
-                  <td className="px-6 py-4 text-sm">
-                    {centre.name}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm">
-                    {centre.email}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm font-bold">
-                    <span
-                      className={
-                        centre.status === "accepted"
-                          ? "text-emerald-500"
-                          : "text-orange-500"
-                      }
-                    >
-                      {centre.status}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 flex gap-2">
-                    {centre.status === "pending" && (
-                      <button
-                        onClick={() =>
-                          handleAccept(centre.id)
-                        }
-                        className="bg-emerald-500 text-white text-xs px-3 py-1 rounded"
-                      >
-                        Accepter
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => {
-                        setSelectedCentre(centre);
-                        setShowModal(true);
-                      }}
-                      className="bg-lightBlue-500 text-white text-xs px-3 py-1 rounded"
-                    >
-                      Modifier
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        handleDelete(centre.id)
-                      }
-                      className="bg-red-500 text-white text-xs px-3 py-1 rounded"
-                    >
-                      Supprimer
-                    </button>
+              {filteredCentres.length > 0 ? (
+                filteredCentres.map((centre) => (
+                  <tr key={centre._id} className="hover:bg-blueGray-50 border-b">
+                    <td className="px-6 py-4">
+                      <img src={centre.logo} alt="logo" className="h-10 w-10 rounded-full border" />
+                    </td>
+                    <td className="px-6 py-4 text-sm font-semibold">{centre.name}</td>
+                    <td className="px-6 py-4 text-sm">{centre.email}</td>
+                    <td className="px-6 py-4">
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${getStatusStyle(centre.status)}`}>
+                        {centre.status === "pending" && "⏳ "}
+                        {centre.status === "accepted" && "✅ "}
+                        {centre.status === "rejected" && "❌ "}
+                        {centre.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        {centre.status === "pending" && (
+                          <>
+                            <button
+                              onClick={() => handleAccept(centre._id)}
+                              disabled={loading}
+                              className="bg-emerald-500 text-white font-bold uppercase text-xs px-3 py-1 rounded shadow hover:shadow-lg transition-all"
+                            >
+                              <i className="fas fa-check mr-1"></i>Accepter
+                            </button>
+                            <button
+                              onClick={() => handleReject(centre._id)}
+                              disabled={loading}
+                              className="bg-orange-500 text-white font-bold uppercase text-xs px-3 py-1 rounded shadow hover:shadow-lg transition-all"
+                            >
+                              <i className="fas fa-times mr-1"></i>Rejeter
+                            </button>
+                          </>
+                        )}
+                        {centre.status === "rejected" && (
+                          <button
+                            onClick={() => handleAccept(centre._id)}
+                            disabled={loading}
+                            className="bg-emerald-100 text-emerald-700 font-bold uppercase text-xs px-3 py-1 rounded hover:bg-emerald-200 transition-all"
+                          >
+                            <i className="fas fa-undo mr-1"></i>Accepter
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openEditModal(centre)}
+                          disabled={loading}
+                          className="bg-lightBlue-500 text-white font-bold uppercase text-xs px-3 py-1 rounded shadow hover:shadow-lg transition-all"
+                        >
+                          <i className="fas fa-edit mr-1"></i>Modifier
+                        </button>
+                        <button
+                          onClick={() => handleDelete(centre._id)}
+                          disabled={loading}
+                          className="bg-red-500 text-white font-bold uppercase text-xs px-3 py-1 rounded shadow hover:shadow-lg transition-all"
+                        >
+                          <i className="fas fa-trash mr-1"></i>Supprimer
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-blueGray-400">
+                    <i className="fas fa-building text-2xl mb-2 block"></i>
+                    Aucun centre trouvé
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Footer */}
+        <div className="px-4 py-2 text-sm text-blueGray-400 border-t flex justify-between items-center">
+          <span>{filteredCentres.length} résultat(s) sur {centres.length} centre(s)</span>
+          <span className="text-xs">
+            <i className={`fas fa-circle mr-1 ${useLocalMode ? "text-amber-500" : "text-emerald-500"}`}></i>
+            {useLocalMode ? "Local" : "API"}
+          </span>
+        </div>
       </div>
 
-      {/* MODAL */}
+      {/* Modal Add/Edit */}
       {showModal && selectedCentre && (
         <>
-          <div className="fixed inset-0 bg-black opacity-50 z-40"></div>
+          <div className="modal-backdrop"></div>
+          <div className="modal-container">
+            <h3 className="text-xl font-semibold mb-4">
+              {modalType === "add" ? "Ajouter Centre" : "Modifier Centre"}
+            </h3>
 
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-8">
-
-              <h3 className="text-xl font-semibold mb-6">
-                Modifier Centre
-              </h3>
-
-              {/* GRID FORM */}
-              <div className="grid grid-cols-2 gap-6">
-
-                {/* Logo */}
-                <div className="col-span-2">
-                  <label className="block text-xs font-bold mb-1">
-                    URL du logo
-                  </label>
-
-                  <input
-                    type="text"
-                    value={selectedCentre.logo}
-                    onChange={(e) =>
-                      setSelectedCentre({
-                        ...selectedCentre,
-                        logo: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded"
-                  />
-
-                  <img
-                    src={selectedCentre.logo}
-                    alt="preview"
-                    className="h-20 w-20 rounded-full border mt-3"
-                  />
-                </div>
-
-                {/* Nom */}
-                <div>
-                  <label className="block text-xs font-bold mb-1">
-                    Nom
-                  </label>
-
-                  <input
-                    type="text"
-                    value={selectedCentre.name}
-                    onChange={(e) =>
-                      setSelectedCentre({
-                        ...selectedCentre,
-                        name: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded"
-                  />
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-xs font-bold mb-1">
-                    Email
-                  </label>
-
-                  <input
-                    type="email"
-                    value={selectedCentre.email}
-                    onChange={(e) =>
-                      setSelectedCentre({
-                        ...selectedCentre,
-                        email: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded"
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Logo URL */}
+              <div className="col-span-2">
+                <label className="block text-xs font-bold mb-1">URL du logo</label>
+                <input
+                  type="text"
+                  value={selectedCentre.logo}
+                  onChange={(e) => setSelectedCentre({ ...selectedCentre, logo: e.target.value })}
+                  className="w-full px-3 py-2 border rounded text-sm"
+                />
+                <img src={selectedCentre.logo} alt="preview" className="h-16 w-16 rounded-full border mt-2" />
               </div>
 
-              {/* ACTIONS */}
-              <div className="flex justify-end gap-3 mt-8">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-blueGray-300 rounded"
-                >
-                  Annuler
-                </button>
+              {/* Nom */}
+              <input
+                type="text"
+                placeholder="Nom du centre"
+                value={selectedCentre.name}
+                onChange={(e) => setSelectedCentre({ ...selectedCentre, name: e.target.value })}
+                className="border rounded px-3 py-2 w-full"
+              />
 
-                <button
-                  onClick={handleSave}
-                  className="px-4 py-2 bg-lightBlue-500 text-white rounded"
-                >
-                  Enregistrer
-                </button>
-              </div>
+              {/* Email */}
+              <input
+                type="email"
+                placeholder="Email"
+                value={selectedCentre.email}
+                onChange={(e) => setSelectedCentre({ ...selectedCentre, email: e.target.value })}
+                className="border rounded px-3 py-2 w-full"
+              />
 
+              {/* Status */}
+              <select
+                value={selectedCentre.status}
+                onChange={(e) => setSelectedCentre({ ...selectedCentre, status: e.target.value })}
+                className="border rounded px-3 py-2 w-full col-span-2"
+              >
+                <option value="pending">⏳ Pending</option>
+                <option value="accepted">✅ Accepté</option>
+                <option value="rejected">❌ Rejeté</option>
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowModal(false)}
+                disabled={loading}
+                className="bg-red-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="bg-emerald-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all"
+              >
+                {loading ? (
+                  <><i className="fas fa-spinner fa-spin mr-2"></i>Saving...</>
+                ) : (
+                  modalType === "add" ? "Ajouter" : "Enregistrer"
+                )}
+              </button>
             </div>
           </div>
         </>
@@ -266,10 +493,5 @@ export default function CardTableCentres({ color }) {
   );
 }
 
-CardTableCentres.defaultProps = {
-  color: "light",
-};
-
-CardTableCentres.propTypes = {
-  color: PropTypes.oneOf(["light", "dark"]),
-};
+CardTableCentres.defaultProps = { color: "light" };
+CardTableCentres.propTypes = { color: PropTypes.oneOf(["light", "dark"]) };

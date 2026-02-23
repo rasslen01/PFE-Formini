@@ -1,20 +1,33 @@
+// ═══════════════════════════════════════════════
+// 📁 src/components/Dropdowns/ProfileDropdown.js
+// ═══════════════════════════════════════════════
+
 import React from "react";
 import { createPopper } from "@popperjs/core";
+import { Link, useHistory } from "react-router-dom";
 
 const UserDropdown = () => {
-  // dropdown props
+  const history = useHistory();
   const [dropdownPopoverShow, setDropdownPopoverShow] = React.useState(false);
   const btnDropdownRef = React.createRef();
   const popoverDropdownRef = React.createRef();
+
   const openDropdownPopover = () => {
     createPopper(btnDropdownRef.current, popoverDropdownRef.current, {
       placement: "bottom-start",
     });
     setDropdownPopoverShow(true);
   };
+
   const closeDropdownPopover = () => {
     setDropdownPopoverShow(false);
   };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    history.push("/auth/login");
+  };
+
   return (
     <>
       <a
@@ -31,11 +44,12 @@ const UserDropdown = () => {
             <img
               alt="..."
               className="w-full rounded-full align-middle border-none shadow-lg"
-              src={require("assets/img/team-1-800x800.jpg").default}
+              src={require("assets/img/centerImg.webp").default}
             />
           </span>
         </div>
       </a>
+
       <div
         ref={popoverDropdownRef}
         className={
@@ -43,43 +57,33 @@ const UserDropdown = () => {
           "bg-white text-base z-50 float-left py-2 list-none text-left rounded shadow-lg min-w-48"
         }
       >
-        <a
-          href="#pablo"
-          className={
-            "text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-blueGray-700"
-          }
-          onClick={(e) => e.preventDefault()}
+        <Link
+          to="/centre/profile"
+          className="text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-blueGray-700 hover:bg-blueGray-50"
+          onClick={closeDropdownPopover}
         >
-          Action
-        </a>
-        <a
-          href="#pablo"
-          className={
-            "text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-blueGray-700"
-          }
-          onClick={(e) => e.preventDefault()}
+          <i className="fas fa-user text-blueGray-400 mr-2"></i>
+          Mon Profile
+        </Link>
+
+        <Link
+          to="/centre/settings"
+          className="text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-blueGray-700 hover:bg-blueGray-50"
+          onClick={closeDropdownPopover}
         >
-          Another action
-        </a>
-        <a
-          href="#pablo"
-          className={
-            "text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-blueGray-700"
-          }
-          onClick={(e) => e.preventDefault()}
-        >
-          Something else here
-        </a>
+          <i className="fas fa-cog text-blueGray-400 mr-2"></i>
+          Settings
+        </Link>
+
         <div className="h-0 my-2 border border-solid border-blueGray-100" />
-        <a
-          href="#pablo"
-          className={
-            "text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-blueGray-700"
-          }
-          onClick={(e) => e.preventDefault()}
+
+        <button
+          className="text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-red-500 hover:bg-red-50 text-left"
+          onClick={handleLogout}
         >
-          Seprated link
-        </a>
+          <i className="fas fa-sign-out-alt mr-2"></i>
+          Déconnexion
+        </button>
       </div>
     </>
   );
