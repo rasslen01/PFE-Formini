@@ -4,6 +4,7 @@
 
 import React, { useState } from "react";
 import { Link, useHistory } from "react-router-dom";
+import { registerUser } from "Services/Apiauth";
 
 export default function Register() {
   const history = useHistory();
@@ -64,46 +65,35 @@ export default function Register() {
   // Soumission
   // ─────────────────────────────────────────
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!validate()) return;
+  if (!validate()) return;
 
-    setIsLoading(true);
+  setIsLoading(true);
 
-    try {
-      // ══════════════════════════════════════════
-      // Simulation API - Remplacez par votre appel réel
-      // Exemple : const res = await axios.post('/api/auth/register', formData);
-      // ══════════════════════════════════════════
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+  try {
+    const response = await registerUser({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role.toUpperCase(),
+      speciality: formData.speciality
+    });
 
-      const fakeUser = {
-        _id: Date.now().toString(),
-        name: formData.name,
-        email: formData.email,
-        speciality: formData.speciality,
-        role: "student",
-        isNewUser: true,
-      };
+    console.log("✅ Registered:", response.data);
 
-      // Sauvegarder dans localStorage
-      localStorage.setItem("user", JSON.stringify(fakeUser));
-      localStorage.setItem("token", "fake-jwt-token-" + Date.now());
-      localStorage.setItem("isNewUser", "true");
+    history.push("/preferences");
 
-      console.log("✅ Inscription réussie:", fakeUser);
-
-      // ══════════════════════════════════════════════
-      // 🚀 REDIRECTION VERS LES PRÉFÉRENCES
-      // ══════════════════════════════════════════════
-      history.push("/preferences");
-
-    } catch (error) {
-      setErrors({ general: "Erreur lors de l'inscription. Réessayez." });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  } catch (error) {
+    setErrors({
+      general:
+        error.response?.data?.error ||
+        "Erreur lors de l'inscription."
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <>

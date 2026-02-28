@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useHistory } from "react-router-dom";
-import { loginUser } from "Services/ApiUser";
+import { loginUser } from "Services/Apiauth";
 
 export default function Login() {
   const history = useHistory();
@@ -49,7 +49,7 @@ export default function Login() {
       const response = await loginUser({
         email: user.email,
         password: user.password,
-        role: role,
+        role: role.toUpperCase(), // Assure que le rôle est en majuscules si nécessaire
       });
 
       console.log("✅ Login successful:", response.data);
