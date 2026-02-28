@@ -5,7 +5,7 @@
 import axios from "axios";
 import { use } from "react";
 
-const apiUrl = "http://localhost:5000";
+const apiUrl = "http://localhost:5000/users";
 
 // ─────────────────────────────────────────
 // GET - Récupérer tous les utilisateurs
@@ -31,6 +31,7 @@ export async function addUser(userData) {
     role: userData.role,
     xp: userData.xp,
     isActive: userData.isActive,
+    password: userData.password,
   });
 }
 export async function addUserWithImage(userData) {

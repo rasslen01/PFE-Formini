@@ -52,13 +52,11 @@ export default function CardTable({ color }) {
     setError("");
     try {
       const res = await getAllUsers();
-      setUsers(res.data);
+      setUsers(res.data.usersList);
       setUseLocalMode(false);
     } catch (err) {
       console.warn("⚠️ Backend non disponible, mode local activé");
       setUseLocalMode(true);
-
-      // Charger depuis localStorage ou fake data
       const saved = localStorage.getItem("localUsers");
       if (saved) {
         setUsers(JSON.parse(saved));
@@ -109,42 +107,45 @@ export default function CardTable({ color }) {
   // Save (API ou Local)
   // ─────────────────────────────────────────
   const handleSave = async () => {
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    try {
-      if (useLocalMode) {
-        // ══════════════════════════════
-        // MODE LOCAL (sans backend)
-        // ══════════════════════════════
-        if (modalType === "add") {
-          const newUser = { ...formUser, _id: Date.now().toString() };
-          saveToLocal([...users, newUser]);
-        } else {
-          saveToLocal(
-            users.map((u) => (u._id === formUser._id ? formUser : u))
-          );
-        }
+  try {
+    if (useLocalMode) {
+      // MODE LOCAL
+      if (modalType === "add") {
+        const newUser = { ...formUser, _id: Date.now().toString() };
+        saveToLocal([...users, newUser]);
       } else {
-        // ══════════════════════════════
-        // MODE API (avec backend)
-        // ══════════════════════════════
-        if (modalType === "add") {
-          await addUserApi(formUser);
-        } else {
-          await updateUserApi(formUser._id, formUser);
-        }
-        await fetchUsers();
+        const updatedUsers = users.map((u) =>
+          u._id === formUser._id ? formUser : u
+        );
+        saveToLocal(updatedUsers);
       }
-
-      setShowModal(false);
-    } catch (err) {
-      setError("Erreur lors de la sauvegarde");
-      console.error("Save error:", err);
-    } finally {
-      setLoading(false);
+    } else {
+      // MODE API
+      if (modalType === "add") {
+        const res = await addUserApi(formUser);
+        setUsers(prev => [...prev, res.data.user]); // ajouter directement
+      } else {
+        const res = await updateUserApi(formUser._id, formUser);
+        // mettre à jour le state local directement
+        setUsers((prevUsers) =>
+          prevUsers.map((u) =>
+            u._id === formUser._id ? res.data.user : u
+          )
+        );
+      }
     }
-  };
+
+    setShowModal(false);
+  } catch (err) {
+    setError("Erreur lors de la sauvegarde");
+    console.error("Save error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ─────────────────────────────────────────
   // Delete (API ou Local)
@@ -160,7 +161,9 @@ export default function CardTable({ color }) {
         saveToLocal(users.filter((u) => u._id !== id));
       } else {
         await deleteUserApi(id);
-        await fetchUsers();
+        // 🔹 Correction : mettre à jour state immédiatement
+        const res = await getAllUsers();
+        setUsers(res.data.usersList);
       }
     } catch (err) {
       setError("Erreur lors de la suppression");
@@ -413,49 +416,94 @@ export default function CardTable({ color }) {
 
       {/* Modal */}
       {showModal && (
-        <>
-          <div className="modal-backdrop"></div>
-          <div className="modal-container">
-            <h3 className="text-xl font-semibold mb-4">
-              {modalType === "add" ? "Ajouter utilisateur" : "Modifier utilisateur"}
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <input type="text" placeholder="Nom" value={formUser.name}
-                onChange={(e) => setFormUser({ ...formUser, name: e.target.value })}
-                className="border rounded px-3 py-2 w-full md:col-span-2" />
-              <input type="email" placeholder="Email" value={formUser.email}
-                onChange={(e) => setFormUser({ ...formUser, email: e.target.value })}
-                className="border rounded px-3 py-2 w-full md:col-span-2" />
-              <select value={formUser.role}
-                onChange={(e) => setFormUser({ ...formUser, role: e.target.value })}
-                className="border rounded px-3 py-2 w-full">
-                <option value="ADMIN">Admin</option>
-                <option value="CENTRE">Centre</option>
-                <option value="STUDENT">Student</option>
-              </select>
-              <input type="number" placeholder="XP" value={formUser.xp}
-                onChange={(e) => setFormUser({ ...formUser, xp: Number(e.target.value) })}
-                min="0" className="border rounded px-3 py-2 w-full" />
-              <select value={formUser.isActive ? "true" : "false"}
-                onChange={(e) => setFormUser({ ...formUser, isActive: e.target.value === "true" })}
-                className="border rounded px-3 py-2 w-full md:col-span-2">
-                <option value="true">✅ Actif</option>
-                <option value="false">🔴 Suspendu</option>
-              </select>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowModal(false)} disabled={loading}
-                className="bg-red-500 text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all">
-                Annuler
-              </button>
-              <button onClick={handleSave} disabled={loading}
-                className="bg-emerald-500 text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all">
-                {loading ? <><i className="fas fa-spinner fa-spin mr-2"></i>Saving...</> : "Enregistrer"}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+  <>
+    <div className="modal-backdrop"></div>
+    <div className="modal-container">
+      <h3 className="text-xl font-semibold mb-4">
+        {modalType === "add" ? "Ajouter utilisateur" : "Modifier utilisateur"}
+      </h3>
+      <div className="grid grid-cols-2 gap-4">
+        <input
+          type="text"
+          placeholder="Nom"
+          value={formUser.name}
+          onChange={(e) => setFormUser({ ...formUser, name: e.target.value })}
+          className="border rounded px-3 py-2 w-full md:col-span-2"
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          value={formUser.email}
+          onChange={(e) => setFormUser({ ...formUser, email: e.target.value })}
+          className="border rounded px-3 py-2 w-full md:col-span-2"
+        />
+        <select
+          value={formUser.role}
+          onChange={(e) => setFormUser({ ...formUser, role: e.target.value })}
+          className="border rounded px-3 py-2 w-full"
+        >
+          <option value="ADMIN">Admin</option>
+          <option value="CENTRE">Centre</option>
+          <option value="STUDENT">Student</option>
+        </select>
+        <input
+          type="number"
+          placeholder="XP"
+          value={formUser.xp}
+          onChange={(e) => setFormUser({ ...formUser, xp: Number(e.target.value) })}
+          min="0"
+          className="border rounded px-3 py-2 w-full"
+        />
+        <select
+          value={formUser.isActive ? "true" : "false"}
+          onChange={(e) =>
+            setFormUser({ ...formUser, isActive: e.target.value === "true" })
+          }
+          className="border rounded px-3 py-2 w-full md:col-span-2"
+        >
+          <option value="true">✅ Actif</option>
+          <option value="false">🔴 Suspendu</option>
+        </select>
+
+        {/* ───── Nouveau champ mot de passe ───── */}
+        {modalType === "add" && (
+          <input
+            type="password"
+            placeholder="Mot de passe"
+            value={formUser.password || ""}
+            onChange={(e) =>
+              setFormUser({ ...formUser, password: e.target.value })
+            }
+            className="border rounded px-3 py-2 w-full md:col-span-2"
+          />
+        )}
+      </div>
+
+      <div className="flex justify-end gap-3 mt-6">
+        <button
+          onClick={() => setShowModal(false)}
+          disabled={loading}
+          className="bg-red-500 text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all"
+        >
+          Annuler
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={loading}
+          className="bg-emerald-500 text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all"
+        >
+          {loading ? (
+            <>
+              <i className="fas fa-spinner fa-spin mr-2"></i>Saving...
+            </>
+          ) : (
+            "Enregistrer"
+          )}
+        </button>
+      </div>
+    </div>
+  </>
+)}
     </>
   );
 }
