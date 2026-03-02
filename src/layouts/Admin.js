@@ -13,15 +13,16 @@ import FooterAdmin from "components/Footers/FooterAdmin.js";
 import Dashboard from "views/admin/Dashboard.js";
 import Maps from "views/admin/Maps.js";
 import Settings from "views/admin/Settings.js";
-import Tables from "views/admin/Tables.js";
 import GestionDesUtilisateurs from "views/admin/GestionDesUtilisateurs"
 import GestionDesCentres from "views/admin/GestionDesCentres"
 import GestionDesFormations from "views/admin/GestionDesFormations"
 import GestionDesBadges from "views/admin/GestionDesBadges"
-import logs from "views/admin/logs"
+import Logs from "views/admin/logs"
 
 
 export default function Admin() {
+
+
   return (
     <>
       <Sidebar />
@@ -34,12 +35,11 @@ export default function Admin() {
             <Route path="/admin/dashboard" exact component={Dashboard} />
             <Route path="/admin/maps" exact component={Maps} />
             <Route path="/admin/settings" exact component={Settings} />
-            <Route path="/admin/tables" exact component={Tables} />
             <Route path="/admin/GestionDesUtilisateurs" exact component={GestionDesUtilisateurs} />
             <Route path="/admin/GestionDesCentres" exact component={GestionDesCentres} />
             <Route path="/admin/GestionDesFormations" exact component={GestionDesFormations} />
             <Route path="/admin/GestionDesBadges" exact component={GestionDesBadges} />
-            <Route path="/admin/logs" exact component={logs} />
+            <Route path="/admin/logs" exact component={Logs} />
 
             <Redirect from="/admin" to="/admin/dashboard" />
           </Switch>

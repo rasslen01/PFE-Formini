@@ -2,7 +2,7 @@
 // 📁 src/components/Cards/CardTableCentres.js
 // ═══════════════════════════════════════════════
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import {
   getAllCentres,
@@ -32,18 +32,45 @@ export default function CardTableCentres({ color }) {
   ];
 
   // ─────────────────────────────────────────
-  // Fetch centres
+  // Helper: normalize backend response
   // ─────────────────────────────────────────
-  const fetchCentres = async () => {
+  const extractCentresArray = (data) => {
+    // backend might return:
+    // 1) { centresList: [...] }
+    // 2) { centres: [...] }
+    // 3) [...] (array directly)
+    if (Array.isArray(data)) return data;
+    if (data?.centresList && Array.isArray(data.centresList)) return data.centresList;
+    if (data?.centres && Array.isArray(data.centres)) return data.centres;
+    return [];
+  };
+
+  // ─────────────────────────────────────────
+  // Save to local
+  // ─────────────────────────────────────────
+  const saveToLocal = (updatedCentres) => {
+    setCentres(updatedCentres);
+    localStorage.setItem("localCentres", JSON.stringify(updatedCentres));
+  };
+
+  // ─────────────────────────────────────────
+  // Fetch centres (API or Local)
+  // ─────────────────────────────────────────
+  const fetchCentres = useCallback(async () => {
     setLoading(true);
     setError("");
+
     try {
       const res = await getAllCentres();
-      setCentres(res.data);
+      const centresArray = extractCentresArray(res.data);
+
+      setCentres(centresArray);
       setUseLocalMode(false);
     } catch (err) {
-      console.warn("⚠️ Backend non disponible, mode local activé");
+      console.warn("⚠️ Centres: Backend non disponible, mode local activé", err?.response?.status);
+
       setUseLocalMode(true);
+
       const saved = localStorage.getItem("localCentres");
       if (saved) {
         setCentres(JSON.parse(saved));
@@ -54,19 +81,11 @@ export default function CardTableCentres({ color }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchCentres();
-  }, []);
-
-  // ─────────────────────────────────────────
-  // Save to local
-  // ─────────────────────────────────────────
-  const saveToLocal = (updatedCentres) => {
-    setCentres(updatedCentres);
-    localStorage.setItem("localCentres", JSON.stringify(updatedCentres));
-  };
+  }, [fetchCentres]);
 
   // ─────────────────────────────────────────
   // Open Add Modal
@@ -98,6 +117,7 @@ export default function CardTableCentres({ color }) {
   const handleSave = async () => {
     setLoading(true);
     setError("");
+
     try {
       if (useLocalMode) {
         if (modalType === "add") {
@@ -116,10 +136,11 @@ export default function CardTableCentres({ color }) {
         }
         await fetchCentres();
       }
+
       setShowModal(false);
     } catch (err) {
       setError("Erreur lors de la sauvegarde");
-      console.error("Save error:", err);
+      console.error("Save error:", err?.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -130,8 +151,10 @@ export default function CardTableCentres({ color }) {
   // ─────────────────────────────────────────
   const handleDelete = async (id) => {
     if (!window.confirm("Supprimer ce centre ?")) return;
+
     setLoading(true);
     setError("");
+
     try {
       if (useLocalMode) {
         saveToLocal(centres.filter((c) => c._id !== id));
@@ -141,7 +164,7 @@ export default function CardTableCentres({ color }) {
       }
     } catch (err) {
       setError("Erreur lors de la suppression");
-      console.error("Delete error:", err);
+      console.error("Delete error:", err?.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -153,6 +176,7 @@ export default function CardTableCentres({ color }) {
   const handleAccept = async (id) => {
     setLoading(true);
     setError("");
+
     try {
       if (useLocalMode) {
         saveToLocal(
@@ -164,7 +188,7 @@ export default function CardTableCentres({ color }) {
       }
     } catch (err) {
       setError("Erreur lors de l'acceptation");
-      console.error("Accept error:", err);
+      console.error("Accept error:", err?.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -175,7 +199,10 @@ export default function CardTableCentres({ color }) {
   // ─────────────────────────────────────────
   const handleReject = async (id) => {
     if (!window.confirm("Rejeter ce centre ?")) return;
+
     setLoading(true);
+    setError("");
+
     try {
       if (useLocalMode) {
         saveToLocal(
@@ -187,6 +214,7 @@ export default function CardTableCentres({ color }) {
       }
     } catch (err) {
       setError("Erreur lors du rejet");
+      console.error("Reject error:", err?.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -196,7 +224,12 @@ export default function CardTableCentres({ color }) {
   // Filter
   // ─────────────────────────────────────────
   const filteredCentres = centres.filter((c) => {
-    const matchSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const name = (c?.name || "").toLowerCase();
+    const email = (c?.email || "").toLowerCase();
+
+    const q = searchQuery.toLowerCase().trim();
+    const matchSearch = name.includes(q) || email.includes(q);
+
     const matchStatus = statusFilter === "ALL" || c.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -206,10 +239,14 @@ export default function CardTableCentres({ color }) {
   // ─────────────────────────────────────────
   const getStatusStyle = (status) => {
     switch (status) {
-      case "accepted": return "bg-emerald-100 text-emerald-700";
-      case "pending": return "bg-amber-100 text-amber-700";
-      case "rejected": return "bg-red-100 text-red-700";
-      default: return "bg-blueGray-100 text-blueGray-700";
+      case "accepted":
+        return "bg-emerald-100 text-emerald-700";
+      case "pending":
+        return "bg-amber-100 text-amber-700";
+      case "rejected":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-blueGray-100 text-blueGray-700";
     }
   };
 
@@ -242,8 +279,13 @@ export default function CardTableCentres({ color }) {
         {/* Error */}
         {error && (
           <div className="bg-red-100 border-b border-red-200 text-red-700 px-4 py-2 text-xs flex justify-between items-center">
-            <span><i className="fas fa-exclamation-circle mr-2"></i>{error}</span>
-            <button onClick={() => setError("")}><i className="fas fa-times"></i></button>
+            <span>
+              <i className="fas fa-exclamation-circle mr-2"></i>
+              {error}
+            </span>
+            <button onClick={() => setError("")}>
+              <i className="fas fa-times"></i>
+            </button>
           </div>
         )}
 
@@ -266,9 +308,15 @@ export default function CardTableCentres({ color }) {
         {/* Header */}
         <div className="rounded-t mb-0 px-4 py-3 border-0">
           <div className="flex flex-wrap justify-between items-center gap-3">
-            <h3 className={`font-semibold text-lg ${color === "light" ? "text-blueGray-700" : "text-white"}`}>
+            <h3
+              className={`font-semibold text-lg ${
+                color === "light" ? "text-blueGray-700" : "text-white"
+              }`}
+            >
               Gestion des Centres
-              {useLocalMode && <span className="ml-2 text-xs font-normal text-amber-500">(local)</span>}
+              {useLocalMode && (
+                <span className="ml-2 text-xs font-normal text-amber-500">(local)</span>
+              )}
             </h3>
 
             <div className="flex flex-wrap gap-2 items-center">
@@ -322,9 +370,16 @@ export default function CardTableCentres({ color }) {
             <thead>
               <tr>
                 {["Logo", "Nom", "Email", "Statut", "Actions"].map((h) => (
-                  <th key={h} className={`px-6 py-3 text-xs uppercase font-semibold text-left border-b ${
-                    color === "light" ? "bg-blueGray-50 text-blueGray-500" : "bg-lightBlue-800 text-lightBlue-300"
-                  }`}>{h}</th>
+                  <th
+                    key={h}
+                    className={`px-6 py-3 text-xs uppercase font-semibold text-left border-b ${
+                      color === "light"
+                        ? "bg-blueGray-50 text-blueGray-500"
+                        : "bg-lightBlue-800 text-lightBlue-300"
+                    }`}
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -333,12 +388,20 @@ export default function CardTableCentres({ color }) {
                 filteredCentres.map((centre) => (
                   <tr key={centre._id} className="hover:bg-blueGray-50 border-b">
                     <td className="px-6 py-4">
-                      <img src={centre.logo} alt="logo" className="h-10 w-10 rounded-full border" />
+                      <img
+                        src={centre.logo || "https://via.placeholder.com/80"}
+                        alt="logo"
+                        className="h-10 w-10 rounded-full border"
+                      />
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold">{centre.name}</td>
                     <td className="px-6 py-4 text-sm">{centre.email}</td>
                     <td className="px-6 py-4">
-                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${getStatusStyle(centre.status)}`}>
+                      <span
+                        className={`text-xs font-bold px-3 py-1 rounded-full ${getStatusStyle(
+                          centre.status
+                        )}`}
+                      >
                         {centre.status === "pending" && "⏳ "}
                         {centre.status === "accepted" && "✅ "}
                         {centre.status === "rejected" && "❌ "}
@@ -365,6 +428,7 @@ export default function CardTableCentres({ color }) {
                             </button>
                           </>
                         )}
+
                         {centre.status === "rejected" && (
                           <button
                             onClick={() => handleAccept(centre._id)}
@@ -374,6 +438,7 @@ export default function CardTableCentres({ color }) {
                             <i className="fas fa-undo mr-1"></i>Accepter
                           </button>
                         )}
+
                         <button
                           onClick={() => openEditModal(centre)}
                           disabled={loading}
@@ -381,6 +446,7 @@ export default function CardTableCentres({ color }) {
                         >
                           <i className="fas fa-edit mr-1"></i>Modifier
                         </button>
+
                         <button
                           onClick={() => handleDelete(centre._id)}
                           disabled={loading}
@@ -406,9 +472,15 @@ export default function CardTableCentres({ color }) {
 
         {/* Footer */}
         <div className="px-4 py-2 text-sm text-blueGray-400 border-t flex justify-between items-center">
-          <span>{filteredCentres.length} résultat(s) sur {centres.length} centre(s)</span>
+          <span>
+            {filteredCentres.length} résultat(s) sur {centres.length} centre(s)
+          </span>
           <span className="text-xs">
-            <i className={`fas fa-circle mr-1 ${useLocalMode ? "text-amber-500" : "text-emerald-500"}`}></i>
+            <i
+              className={`fas fa-circle mr-1 ${
+                useLocalMode ? "text-amber-500" : "text-emerald-500"
+              }`}
+            ></i>
             {useLocalMode ? "Local" : "API"}
           </span>
         </div>
@@ -430,10 +502,16 @@ export default function CardTableCentres({ color }) {
                 <input
                   type="text"
                   value={selectedCentre.logo}
-                  onChange={(e) => setSelectedCentre({ ...selectedCentre, logo: e.target.value })}
+                  onChange={(e) =>
+                    setSelectedCentre({ ...selectedCentre, logo: e.target.value })
+                  }
                   className="w-full px-3 py-2 border rounded text-sm"
                 />
-                <img src={selectedCentre.logo} alt="preview" className="h-16 w-16 rounded-full border mt-2" />
+                <img
+                  src={selectedCentre.logo || "https://via.placeholder.com/80"}
+                  alt="preview"
+                  className="h-16 w-16 rounded-full border mt-2"
+                />
               </div>
 
               {/* Nom */}
@@ -441,7 +519,9 @@ export default function CardTableCentres({ color }) {
                 type="text"
                 placeholder="Nom du centre"
                 value={selectedCentre.name}
-                onChange={(e) => setSelectedCentre({ ...selectedCentre, name: e.target.value })}
+                onChange={(e) =>
+                  setSelectedCentre({ ...selectedCentre, name: e.target.value })
+                }
                 className="border rounded px-3 py-2 w-full"
               />
 
@@ -450,14 +530,18 @@ export default function CardTableCentres({ color }) {
                 type="email"
                 placeholder="Email"
                 value={selectedCentre.email}
-                onChange={(e) => setSelectedCentre({ ...selectedCentre, email: e.target.value })}
+                onChange={(e) =>
+                  setSelectedCentre({ ...selectedCentre, email: e.target.value })
+                }
                 className="border rounded px-3 py-2 w-full"
               />
 
               {/* Status */}
               <select
                 value={selectedCentre.status}
-                onChange={(e) => setSelectedCentre({ ...selectedCentre, status: e.target.value })}
+                onChange={(e) =>
+                  setSelectedCentre({ ...selectedCentre, status: e.target.value })
+                }
                 className="border rounded px-3 py-2 w-full col-span-2"
               >
                 <option value="pending">⏳ Pending</option>
@@ -480,9 +564,13 @@ export default function CardTableCentres({ color }) {
                 className="bg-emerald-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all"
               >
                 {loading ? (
-                  <><i className="fas fa-spinner fa-spin mr-2"></i>Saving...</>
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>Saving...
+                  </>
+                ) : modalType === "add" ? (
+                  "Ajouter"
                 ) : (
-                  modalType === "add" ? "Ajouter" : "Enregistrer"
+                  "Enregistrer"
                 )}
               </button>
             </div>

@@ -5,8 +5,16 @@
 import React, { useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import { registerUser } from "Services/Apiauth";
+import { useRef , useEffect } from "react";
 
 export default function Register() {
+  const isMounted = useRef(true);
+
+useEffect(() => {
+  return () => {
+    isMounted.current = false;
+  };
+}, []);
   const history = useHistory();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -91,8 +99,10 @@ export default function Register() {
         "Erreur lors de l'inscription."
     });
   } finally {
+  if (isMounted.current) {
     setIsLoading(false);
   }
+}
 };
 
   return (
