@@ -88,9 +88,24 @@ useEffect(() => {
       speciality: formData.speciality
     });
 
-    console.log("✅ Registered:", response.data);
+   console.log("✅ Registered:", response.data);
 
-    history.push("/preferences");
+// ✅ récupérer token + user depuis la réponse backend
+const token = response.data?.token || response.data?.accessToken;
+const user = response.data?.user || response.data?.newUser || response.data?.data?.user;
+
+// si backend renvoie token + user → on auto-login
+if (token && user) {
+  localStorage.setItem("token", token);
+  localStorage.setItem("user", JSON.stringify(user));
+  localStorage.setItem("role", user.role || formData.role.toUpperCase());
+
+  history.push("/preferences");
+  return;
+}
+
+// fallback (si backend ne renvoie pas token/user)
+history.push("/auth/login");
 
   } catch (error) {
     setErrors({

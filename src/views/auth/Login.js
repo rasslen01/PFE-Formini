@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import { loginUser } from "Services/Apiauth";
+import axios from "axios";
 
 export default function Login() {
   const history = useHistory();
@@ -8,7 +9,6 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // ✅ Correction : [] au lieu de {}
   const [user, setUser] = useState({
     email: "",
     password: "",
@@ -16,24 +16,18 @@ export default function Login() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setUser({ ...user, [name]: value });
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" });
-    }
+    setUser((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validate = () => {
     const newErrors = {};
-    if (!user.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(user.email)) {
-      newErrors.email = "Invalid email";
-    }
-    if (!user.password) {
-      newErrors.password = "Password is required";
-    } else if (user.password.length < 6) {
-      newErrors.password = "Minimum 6 characters";
-    }
+    if (!user.email.trim()) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(user.email)) newErrors.email = "Invalid email";
+
+    if (!user.password) newErrors.password = "Password is required";
+    else if (user.password.length < 6) newErrors.password = "Minimum 6 characters";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -47,25 +41,59 @@ export default function Login() {
 
     try {
       const response = await loginUser({
-        email: user.email,
+        email: user.email.trim(),
         password: user.password,
-        role: role.toUpperCase(), // Assure que le rôle est en majuscules si nécessaire
+        role: role.toUpperCase(),
       });
+
+      const token = response.data?.token;
+      const loggedUser = response.data?.user;
+
+      // ✅ normalize role from backend (source of truth)
+      const normalizedRole = (loggedUser?.role || role || "").toString().toLowerCase();
 
       console.log("✅ Login successful:", response.data);
 
-      // Sauvegarder token et user
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-      localStorage.setItem("role", role);
+      // ✅ Save session
+      if (token) localStorage.setItem("token", token);
+      if (loggedUser) localStorage.setItem("user", JSON.stringify(loggedUser));
+      localStorage.setItem("role", normalizedRole);
 
-      // Redirection selon le rôle
-      switch (role) {
+      // ✅ If centre: check status (pending/accepted/rejected)
+      if (normalizedRole === "centre") {
+        try {
+          // adapte URL si ton prefix différent
+          const centresRes = await axios.get("http://localhost:5000/centres/getAllCentres");
+          const centresList = centresRes.data?.centresList || [];
+
+          const centre = centresList.find(
+            (c) => (c.email || "").toLowerCase() === (loggedUser?.email || "").toLowerCase()
+          );
+
+          if (!centre) {
+            setErrors({ general: "Centre profile not found. Please contact admin." });
+            setIsLoading(false);
+            return;
+          }
+
+          if (centre.status !== "accepted") {
+            history.push("/centre/pending");
+            return;
+          }
+
+          history.push("/centre/dashboard");
+          return;
+        } catch (err) {
+          console.error("❌ Centre status check failed:", err.response?.data || err.message);
+          setErrors({ general: "Unable to verify centre status. Try again." });
+          return;
+        }
+      }
+
+      // ✅ Redirect by role
+      switch (normalizedRole) {
         case "admin":
           history.push("/admin/dashboard");
-          break;
-        case "centre":
-          history.push("/centre/dashboard");
           break;
         case "student":
         default:
@@ -111,13 +139,10 @@ export default function Login() {
         <div className="flex content-center items-center justify-center h-full">
           <div className="w-full lg:w-4/12 px-4">
             <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-200 border-0">
-
               {/* Header + Social */}
               <div className="rounded-t mb-0 px-6 py-6">
                 <div className="text-center mb-3">
-                  <h6 className="text-blueGray-500 text-sm font-bold">
-                    Sign in with
-                  </h6>
+                  <h6 className="text-blueGray-500 text-sm font-bold">Sign in with</h6>
                 </div>
 
                 <div className="btn-wrapper text-center flex justify-center gap-4">
@@ -134,6 +159,7 @@ export default function Login() {
                     />
                     Google
                   </button>
+
                   <button
                     type="button"
                     onClick={handleFacebookLogin}
@@ -154,7 +180,6 @@ export default function Login() {
                   <small>Or sign in with credentials</small>
                 </div>
 
-                {/* Error */}
                 {errors.general && (
                   <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
                     <i className="fas fa-exclamation-circle mr-2"></i>
@@ -163,7 +188,6 @@ export default function Login() {
                 )}
 
                 <form onSubmit={handleLogin}>
-
                   {/* Email */}
                   <div className="relative w-full mb-3">
                     <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
@@ -228,10 +252,10 @@ export default function Login() {
                           className="form-radio text-lightBlue-500"
                         />
                         <span className="ml-2">
-                          <i className="fas fa-user-graduate mr-1"></i>
-                          Student
+                          <i className="fas fa-user-graduate mr-1"></i> Student
                         </span>
                       </label>
+
                       <label className="inline-flex items-center cursor-pointer">
                         <input
                           type="radio"
@@ -242,10 +266,10 @@ export default function Login() {
                           className="form-radio text-orange-500"
                         />
                         <span className="ml-2">
-                          <i className="fas fa-user-shield mr-1"></i>
-                          Admin
+                          <i className="fas fa-user-shield mr-1"></i> Admin
                         </span>
                       </label>
+
                       <label className="inline-flex items-center cursor-pointer">
                         <input
                           type="radio"
@@ -256,8 +280,7 @@ export default function Login() {
                           className="form-radio text-purple-500"
                         />
                         <span className="ml-2">
-                          <i className="fas fa-building mr-1"></i>
-                          Centre
+                          <i className="fas fa-building mr-1"></i> Centre
                         </span>
                       </label>
                     </div>
@@ -298,7 +321,6 @@ export default function Login() {
                       )}
                     </button>
                   </div>
-
                 </form>
               </div>
             </div>
@@ -316,7 +338,6 @@ export default function Login() {
                 </Link>
               </div>
             </div>
-
           </div>
         </div>
       </div>
