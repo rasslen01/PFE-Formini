@@ -69,7 +69,7 @@ export default function Login() {
           break;
         case "student":
         default:
-          history.push("/student/dashboard");
+          history.push("/landing");
           break;
       }
     } catch (error) {

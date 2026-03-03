@@ -24,8 +24,9 @@ const UserDropdown = () => {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
-    history.push("/auth/login");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/";
   };
 
   return (
