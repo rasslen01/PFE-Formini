@@ -48,3 +48,10 @@ export async function updateUser(id, userData) {
 export async function deleteUser(id) {
   return axios.delete(`${apiUrl}/deleteUser/${id}`, authConfig());
 }
+export const getMyProfile = (token) => {
+  return axios.get(`${apiUrl}/profile`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};

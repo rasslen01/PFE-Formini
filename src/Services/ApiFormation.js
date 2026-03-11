@@ -4,7 +4,7 @@
 
 import axios from "axios";
 
-const apiUrl = "http://localhost:5000";
+const apiUrl = "http://localhost:5000/formations";
 
 // ─────────────────────────────────────────
 // GET - Récupérer toutes les formations
@@ -32,6 +32,8 @@ export async function addFormation(formationData) {
     price: formationData.price,
     date: formationData.date,
     time: formationData.time,
+    domain : formationData.domain,
+    centreLogo: formationData.centreLogo,
   });
 }
 
@@ -69,6 +71,8 @@ export async function updateFormation(id, formationData) {
     price: formationData.price,
     date: formationData.date,
     time: formationData.time,
+    domain : formationData.domain,
+    centreLogo: formationData.centreLogo,
   });
 }
 

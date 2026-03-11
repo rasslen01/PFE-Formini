@@ -106,3 +106,7 @@ export async function searchCentres(query) {
     authConfig()
   );
 }
+
+export async function getAcceptedCentres() {
+  return await axios.get(`${apiUrl}/getAcceptedCentres`);
+}
