@@ -1,26 +1,83 @@
 /*eslint-disable*/
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import IndexNavbar from "components/Navbars/IndexNavbar.js";
 import Footer from "components/Footers/Footer.js";
 
+// ✅ Backend API
+import { getAllFormations } from "Services/ApiFormation";
+
 export default function Index() {
-  var [ville, setVille] = useState("");
-  var [domaine, setDomaine] = useState("");
-  var [search, setSearch] = useState("");
+  const [ville, setVille] = useState("");
+  const [domaine, setDomaine] = useState("");
+  const [search, setSearch] = useState("");
 
-  var formations = [
-    { id: 1, nom: "Développement Web Full Stack", ville: "tunis", domaine: "informatique", description: "Maîtrisez HTML, CSS, JavaScript, React et Node.js pour créer des applications web complètes et modernes.", prix: 450, duree: "3 mois", nbEtudiants: 128, rating: 4.8, formateur: "Ahmed Benali", niveau: "Intermédiaire" },
-    { id: 2, nom: "Marketing Digital & Réseaux Sociaux", ville: "sfax", domaine: "marketing", description: "Apprenez à créer des campagnes marketing efficaces sur Facebook, Instagram, Google Ads et plus encore.", prix: 300, duree: "2 mois", nbEtudiants: 95, rating: 4.6, formateur: "Sara Moussaoui", niveau: "Débutant" },
-    { id: 3, nom: "Data Science & Machine Learning", ville: "tunis", domaine: "data", description: "Explorez Python, Pandas, TensorFlow et les algorithmes de Machine Learning pour analyser des données massives.", prix: 550, duree: "4 mois", nbEtudiants: 76, rating: 4.9, formateur: "Karim Tazi", niveau: "Avancé" },
-    { id: 4, nom: "Intelligence Artificielle Appliquée", ville: "sousse", domaine: "ia", description: "Découvrez le Deep Learning, le NLP et la vision par ordinateur avec des projets pratiques.", prix: 600, duree: "4 mois", nbEtudiants: 54, rating: 4.7, formateur: "Mohamed Sahli", niveau: "Avancé" },
-    { id: 5, nom: "Développement Mobile React Native", ville: "ariana", domaine: "mobile", description: "Créez des applications mobiles iOS et Android avec React Native et déployez-les sur les stores.", prix: 0, gratuit: true, duree: "2 mois", nbEtudiants: 142, rating: 4.5, formateur: "Ines Ben Amor", niveau: "Intermédiaire" },
-    { id: 6, nom: "Réseaux & Cybersécurité", ville: "bizerte", domaine: "reseaux", description: "Apprenez la configuration réseau, la sécurité informatique et préparez la certification CCNA.", prix: 400, duree: "3 mois", nbEtudiants: 63, rating: 4.4, formateur: "Ali Hammami", niveau: "Intermédiaire" },
-  ];
+  // ✅ formations backend
+  const [formations, setFormations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  var getImage = function (domaine) {
-    var images = {
+  // ─────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────
+  const normalize = (v) => (v || "").toString().trim().toLowerCase();
+
+  const mapFormation = (f) => {
+    return {
+      _id: f._id,
+      id: f._id,
+
+      nom: f.name || "Sans titre",
+      ville: normalize(f.location),          // للفلترة
+      domaine: normalize(f.domain),          // ✅ من backend (بدون fallback)
+
+      description: f.description || "",
+      prix: typeof f.price === "number" ? f.price : Number(f.price) || 0,
+      gratuit: (typeof f.price === "number" ? f.price : Number(f.price) || 0) === 0,
+
+      duree: f.duree || f.duration || "",
+      nbEtudiants: f.nbEtudiants || f.studentsCount || 0,
+      rating: typeof f.rating === "number" ? f.rating : null,
+      formateur: f.instructor || "",
+      niveau: f.level || "",
+      status: f.status || "pending",
+    };
+  };
+
+  // ─────────────────────────────────────────
+  // Load from backend
+  // ─────────────────────────────────────────
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const res = await getAllFormations();
+        const list = res.data?.formationsList || [];
+
+        // ✅ عرض كان المقبولة
+        const accepted = list.filter((f) => (f.status || "") === "accepted");
+
+        setFormations(accepted.map(mapFormation));
+      } catch (err) {
+        console.error("Failed to load formations:", err);
+        setError(err.response?.data?.error || "Erreur lors du chargement des formations");
+        setFormations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  // ─────────────────────────────────────────
+  // UI helpers (كما عندك)
+  // ─────────────────────────────────────────
+  const getImage = (domaineKey) => {
+    const images = {
       informatique: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&q=80",
       marketing: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&q=80",
       data: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80",
@@ -28,31 +85,79 @@ export default function Index() {
       ia: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=500&q=80",
       reseaux: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=500&q=80",
     };
-    return images[domaine] || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&q=80";
-  };
 
-  var getColor = function (domaine) {
-    var colors = { informatique: "#3b82f6", marketing: "#8b5cf6", data: "#10b981", mobile: "#ec4899", ia: "#f59e0b", reseaux: "#ef4444" };
-    return colors[domaine] || "#0ea5e9";
-  };
-
-  var getIcon = function (domaine) {
-    var icons = { informatique: "fas fa-laptop-code", marketing: "fas fa-bullhorn", data: "fas fa-chart-bar", mobile: "fas fa-mobile-alt", ia: "fas fa-robot", reseaux: "fas fa-network-wired" };
-    return icons[domaine] || "fas fa-book";
-  };
-
-  var getVilleName = function (ville) {
-    var names = { tunis: "Tunis", ariana: "Ariana", sfax: "Sfax", sousse: "Sousse", bizerte: "Bizerte", monastir: "Monastir", nabeul: "Nabeul", ben_arous: "Ben Arous", manouba: "Manouba" };
-    return names[ville] || ville || "";
-  };
-
-  var formationsFiltrees = formations.filter(function (f) {
     return (
-      (ville === "" || f.ville === ville) &&
-      (domaine === "" || f.domaine === domaine) &&
-      f.nom.toLowerCase().includes(search.toLowerCase())
+      images[normalize(domaineKey)] ||
+      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&q=80"
     );
-  });
+  };
+
+  const getColor = (domaineKey) => {
+    const colors = {
+      informatique: "#3b82f6",
+      marketing: "#8b5cf6",
+      data: "#10b981",
+      mobile: "#ec4899",
+      ia: "#f59e0b",
+      reseaux: "#ef4444",
+    };
+    return colors[normalize(domaineKey)] || "#0ea5e9";
+  };
+
+  const getIcon = (domaineKey) => {
+    const icons = {
+      informatique: "fas fa-laptop-code",
+      marketing: "fas fa-bullhorn",
+      data: "fas fa-chart-bar",
+      mobile: "fas fa-mobile-alt",
+      ia: "fas fa-robot",
+      reseaux: "fas fa-network-wired",
+    };
+    return icons[normalize(domaineKey)] || "fas fa-book";
+  };
+
+  const getVilleName = (villeKey) => {
+    const names = {
+      tunis: "Tunis",
+      ariana: "Ariana",
+      sfax: "Sfax",
+      sousse: "Sousse",
+      bizerte: "Bizerte",
+      monastir: "Monastir",
+      nabeul: "Nabeul",
+      ben_arous: "Ben Arous",
+      manouba: "Manouba",
+      zaghouan: "Zaghouan",
+      beja: "Béja",
+      jendouba: "Jendouba",
+      kef: "Le Kef",
+      siliana: "Siliana",
+      mahdia: "Mahdia",
+      kairouan: "Kairouan",
+      kasserine: "Kasserine",
+      sidi_bouzid: "Sidi Bouzid",
+      gabes: "Gabès",
+      medenine: "Médenine",
+      tataouine: "Tataouine",
+      gafsa: "Gafsa",
+      tozeur: "Tozeur",
+      kebili: "Kébili",
+    };
+    return names[normalize(villeKey)] || villeKey || "";
+  };
+
+  // ─────────────────────────────────────────
+  // Filters
+  // ─────────────────────────────────────────
+  const formationsFiltrees = useMemo(() => {
+    return formations.filter((f) => {
+      return (
+        (ville === "" || normalize(f.ville) === normalize(ville)) &&
+        (domaine === "" || normalize(f.domaine) === normalize(domaine)) &&
+        normalize(f.nom).includes(normalize(search))
+      );
+    });
+  }, [formations, ville, domaine, search]);
 
   return (
     <>
@@ -94,12 +199,6 @@ export default function Index() {
         />
       </section>
 
-      {/* ===== SECTION 2 ===== */}
-      
-
-      {/* ===== SECTION 3 CARDS ===== */}
-      
-
       {/* ===== SECTION FORMATIONS ===== */}
       <section className="py-20 bg-blueGray-200">
         <div className="container mx-auto px-4">
@@ -115,6 +214,20 @@ export default function Index() {
               Découvrez toutes les formations professionnelles disponibles à travers la Tunisie
             </p>
           </div>
+
+          {/* Loading / Error */}
+          {loading && (
+            <div className="text-center py-10 text-blueGray-500">
+              <i className="fas fa-spinner fa-spin mr-2"></i>
+              Chargement des formations...
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6">
+              {error}
+            </div>
+          )}
 
           {/* Filtres */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
@@ -210,30 +323,6 @@ export default function Index() {
                 </button>
               </div>
             </div>
-
-            {(ville || domaine || search) && (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="text-xs text-blueGray-500">Filtres actifs :</span>
-                {search && (
-                  <span className="bg-lightBlue-100 text-lightBlue-700 text-xs px-3 py-1 rounded-full flex items-center">
-                    "{search}"
-                    <button onClick={() => setSearch("")} className="ml-1 hover:text-red-500">×</button>
-                  </span>
-                )}
-                {ville && (
-                  <span className="bg-emerald-100 text-emerald-700 text-xs px-3 py-1 rounded-full flex items-center">
-                    📍 {ville}
-                    <button onClick={() => setVille("")} className="ml-1 hover:text-red-500">×</button>
-                  </span>
-                )}
-                {domaine && (
-                  <span className="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full flex items-center">
-                    🏷️ {domaine}
-                    <button onClick={() => setDomaine("")} className="ml-1 hover:text-red-500">×</button>
-                  </span>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Compteur */}
@@ -248,7 +337,7 @@ export default function Index() {
           </div>
 
           {/* Grille formations */}
-          {formationsFiltrees.length === 0 ? (
+          {!loading && !error && formationsFiltrees.length === 0 ? (
             <div className="text-center py-16">
               <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto">
                 <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔍</div>
@@ -269,165 +358,149 @@ export default function Index() {
             </div>
           ) : (
             <div className="flex flex-wrap">
-              {formationsFiltrees.map(function (formation, index) {
-                return (
-                  <div
-                    key={formation.id}
-                    className="w-full lg:w-4/12 px-4"
-                    style={{
-                      animation: "fadeInUp 0.5s ease-out " + index * 0.1 + "s both",
-                    }}
-                  >
-                    <div className="hover:-mt-4 relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg ease-linear transition-all duration-150 overflow-hidden group">
-                      {/* Titre dans la carte */}
-                      <div
-                        style={{
-                          padding: "14px 16px 10px",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        <Link
-                          to={"/centre/" + formation.id}
-                          style={{ textDecoration: "none" }}
-                        >
-                          <h5
-                            style={{
-                              fontSize: "15px",
-                              fontWeight: "bold",
-                              color: "#1e293b",
-                              margin: 0,
-                              textAlign: "center",
-                              transition: "color 0.2s",
-                              cursor: "pointer",
-                            }}
-                            className="group-hover:text-lightBlue-600"
-                          >
-                            {formation.nom}
-                          </h5>
-                        </Link>
-                      </div>
-
-                      {/* Image */}
-                      <div
-                        style={{
-                          position: "relative",
-                          height: "180px",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <img
-                          alt={formation.nom}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          src={getImage(formation.domaine)}
-                        />
-                        <div
+              {formationsFiltrees.map((formation, index) => (
+                <div
+                  key={formation.id}
+                  className="w-full lg:w-4/12 px-4"
+                  style={{
+                    animation: "fadeInUp 0.5s ease-out " + index * 0.1 + "s both",
+                  }}
+                >
+                  <div className="hover:-mt-4 relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg ease-linear transition-all duration-150 overflow-hidden group">
+                    {/* Titre */}
+                    <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid #f1f5f9" }}>
+                      <Link to={"/centre/" + formation.id} style={{ textDecoration: "none" }}>
+                        <h5
                           style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            background: "linear-gradient(to top, rgba(0,0,0,0.6), transparent)",
-                          }}
-                        ></div>
-
-                        {/* Badge domaine */}
-                        <span
-                          style={{
-                            position: "absolute",
-                            top: "10px",
-                            left: "10px",
-                            backgroundColor: getColor(formation.domaine),
-                            color: "white",
-                            fontSize: "10px",
+                            fontSize: "15px",
                             fontWeight: "bold",
-                            padding: "4px 10px",
-                            borderRadius: "20px",
-                            textTransform: "uppercase",
+                            color: "#1e293b",
+                            margin: 0,
+                            textAlign: "center",
+                            transition: "color 0.2s",
+                            cursor: "pointer",
                           }}
+                          className="group-hover:text-lightBlue-600"
                         >
-                          <i
-                            className={getIcon(formation.domaine)}
-                            style={{ marginRight: "4px" }}
-                          ></i>
-                          {formation.domaine}
-                        </span>
+                          {formation.nom}
+                        </h5>
+                      </Link>
+                    </div>
 
-                        {/* Prix */}
+                    {/* Image */}
+                    <div style={{ position: "relative", height: "180px", overflow: "hidden" }}>
+                      <img
+                        alt={formation.nom}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        src={getImage(formation.domaine)}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: "linear-gradient(to top, rgba(0,0,0,0.6), transparent)",
+                        }}
+                      ></div>
+
+                      {/* Badge domaine */}
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: "10px",
+                          left: "10px",
+                          backgroundColor: getColor(formation.domaine),
+                          color: "white",
+                          fontSize: "10px",
+                          fontWeight: "bold",
+                          padding: "4px 10px",
+                          borderRadius: "20px",
+                          textTransform: "uppercase",
+                        }}
+                        title={formation.domaine || "non défini"}
+                      >
+                        <i className={getIcon(formation.domaine)} style={{ marginRight: "4px" }}></i>
+                        {formation.domaine || "non défini"}
+                      </span>
+
+                      {/* Prix */}
+                      <span
+                        style={{
+                          position: "absolute",
+                          bottom: "10px",
+                          right: "10px",
+                          backgroundColor: formation.prix === 0 || formation.gratuit ? "#10b981" : "#1e293b",
+                          color: "white",
+                          fontSize: "13px",
+                          fontWeight: "bold",
+                          padding: "4px 12px",
+                          borderRadius: "20px",
+                        }}
+                      >
+                        {formation.prix === 0 || formation.gratuit ? "Gratuit" : formation.prix + " DT"}
+                      </span>
+
+                      {/* Niveau */}
+                      {formation.niveau && (
                         <span
                           style={{
                             position: "absolute",
                             bottom: "10px",
-                            right: "10px",
+                            left: "10px",
                             backgroundColor:
-                              formation.prix === 0 || formation.gratuit
+                              formation.niveau === "Débutant"
                                 ? "#10b981"
-                                : "#1e293b",
+                                : formation.niveau === "Intermédiaire"
+                                ? "#f59e0b"
+                                : "#ef4444",
                             color: "white",
-                            fontSize: "13px",
+                            fontSize: "10px",
                             fontWeight: "bold",
-                            padding: "4px 12px",
+                            padding: "3px 8px",
                             borderRadius: "20px",
                           }}
                         >
-                          {formation.prix === 0 || formation.gratuit
-                            ? "Gratuit"
-                            : formation.prix + " DT"}
+                          {formation.niveau}
                         </span>
+                      )}
+                    </div>
 
-                        {/* Niveau */}
-                        {formation.niveau && (
-                          <span
-                            style={{
-                              position: "absolute",
-                              bottom: "10px",
-                              left: "10px",
-                              backgroundColor:
-                                formation.niveau === "Débutant"
-                                  ? "#10b981"
-                                  : formation.niveau === "Intermédiaire"
-                                  ? "#f59e0b"
-                                  : "#ef4444",
-                              color: "white",
-                              fontSize: "10px",
-                              fontWeight: "bold",
-                              padding: "3px 8px",
-                              borderRadius: "20px",
-                            }}
-                          >
-                            {formation.niveau}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Contenu */}
-                      <div style={{ padding: "14px 16px" }}>
-                        {formation.description && (
-                          <p
-                            style={{
-                              fontSize: "12px",
-                              color: "#94a3b8",
-                              marginBottom: "10px",
-                              lineHeight: "1.5",
-                              overflow: "hidden",
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                            }}
-                          >
-                            {formation.description}
-                          </p>
-                        )}
-
-                        {/* Tags */}
-                        <div
+                    {/* Contenu */}
+                    <div style={{ padding: "14px 16px" }}>
+                      {formation.description && (
+                        <p
                           style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: "6px",
+                            fontSize: "12px",
+                            color: "#94a3b8",
                             marginBottom: "10px",
+                            lineHeight: "1.5",
+                            overflow: "hidden",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
                           }}
                         >
+                          {formation.description}
+                        </p>
+                      )}
+
+                      {/* Tags */}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            color: "#64748b",
+                            backgroundColor: "#f1f5f9",
+                            padding: "3px 8px",
+                            borderRadius: "20px",
+                          }}
+                        >
+                          📍 {getVilleName(formation.ville)}
+                        </span>
+
+                        {formation.duree && (
                           <span
                             style={{
                               fontSize: "11px",
@@ -437,201 +510,115 @@ export default function Index() {
                               borderRadius: "20px",
                             }}
                           >
-                            📍 {getVilleName(formation.ville)}
+                            ⏱ {formation.duree}
                           </span>
-                          {formation.duree && (
-                            <span
-                              style={{
-                                fontSize: "11px",
-                                color: "#64748b",
-                                backgroundColor: "#f1f5f9",
-                                padding: "3px 8px",
-                                borderRadius: "20px",
-                              }}
-                            >
-                              ⏱ {formation.duree}
-                            </span>
-                          )}
-                          {formation.nbEtudiants && (
-                            <span
-                              style={{
-                                fontSize: "11px",
-                                color: "#64748b",
-                                backgroundColor: "#f1f5f9",
-                                padding: "3px 8px",
-                                borderRadius: "20px",
-                              }}
-                            >
-                              👥 {formation.nbEtudiants}
-                            </span>
-                          )}
-                        </div>
+                        )}
 
-                        {/* Note + Formateur */}
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: "12px",
-                            paddingBottom: "10px",
-                            borderBottom: "1px solid #f1f5f9",
-                          }}
-                        >
-                          {formation.rating && (
-                            <div style={{ display: "flex", alignItems: "center" }}>
-                              {[1, 2, 3, 4, 5].map(function (star) {
-                                return (
-                                  <span
-                                    key={star}
-                                    style={{
-                                      color:
-                                        star <= Math.floor(formation.rating)
-                                          ? "#facc15"
-                                          : "#e2e8f0",
-                                      fontSize: "11px",
-                                    }}
-                                  >
-                                    ★
-                                  </span>
-                                );
-                              })}
+                        {formation.nbEtudiants ? (
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              color: "#64748b",
+                              backgroundColor: "#f1f5f9",
+                              padding: "3px 8px",
+                              borderRadius: "20px",
+                            }}
+                          >
+                            👥 {formation.nbEtudiants}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* Note + Formateur */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: "12px",
+                          paddingBottom: "10px",
+                          borderBottom: "1px solid #f1f5f9",
+                        }}
+                      >
+                        {formation.rating && (
+                          <div style={{ display: "flex", alignItems: "center" }}>
+                            {[1, 2, 3, 4, 5].map((star) => (
                               <span
+                                key={star}
                                 style={{
+                                  color: star <= Math.floor(formation.rating) ? "#facc15" : "#e2e8f0",
                                   fontSize: "11px",
-                                  color: "#94a3b8",
-                                  marginLeft: "4px",
                                 }}
                               >
-                                {formation.rating}
+                                ★
                               </span>
-                            </div>
-                          )}
-                          {formation.formateur && (
-                            <span style={{ fontSize: "11px", color: "#94a3b8" }}>
-                              🎓 {formation.formateur}
+                            ))}
+                            <span style={{ fontSize: "11px", color: "#94a3b8", marginLeft: "4px" }}>
+                              {formation.rating}
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
 
-                        {/* Boutons */}
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <Link
-                            to={"/centre/" + formation.id}
-                            style={{
-                              flex: 1,
-                              textAlign: "center",
-                              backgroundColor: "#0ea5e9",
-                              color: "white",
-                              fontWeight: "bold",
-                              fontSize: "11px",
-                              textTransform: "uppercase",
-                              padding: "8px",
-                              borderRadius: "6px",
-                              textDecoration: "none",
-                            }}
-                          >
-                            <i className="fas fa-eye" style={{ marginRight: "4px" }}></i>
-                            Détails
-                          </Link>
-                          <Link
-                            to="/auth/register"
-                            style={{
-                              textAlign: "center",
-                              backgroundColor: "#10b981",
-                              color: "white",
-                              fontWeight: "bold",
-                              fontSize: "11px",
-                              textTransform: "uppercase",
-                              padding: "8px 12px",
-                              borderRadius: "6px",
-                              textDecoration: "none",
-                            }}
-                          >
-                            <i className="fas fa-user-plus" style={{ marginRight: "4px" }}></i>
-                            S'inscrire
-                          </Link>
-                        </div>
+                        {formation.formateur && (
+                          <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+                            🎓 {formation.formateur}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Boutons */}
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <Link
+                          to={"/centre/" + formation.id}
+                          style={{
+                            flex: 1,
+                            textAlign: "center",
+                            backgroundColor: "#0ea5e9",
+                            color: "white",
+                            fontWeight: "bold",
+                            fontSize: "11px",
+                            textTransform: "uppercase",
+                            padding: "8px",
+                            borderRadius: "6px",
+                            textDecoration: "none",
+                          }}
+                        >
+                          <i className="fas fa-eye" style={{ marginRight: "4px" }}></i>
+                          Détails
+                        </Link>
+
+                        <Link
+                          to="/auth/register"
+                          style={{
+                            textAlign: "center",
+                            backgroundColor: "#10b981",
+                            color: "white",
+                            fontWeight: "bold",
+                            fontSize: "11px",
+                            textTransform: "uppercase",
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            textDecoration: "none",
+                          }}
+                        >
+                          <i className="fas fa-user-plus" style={{ marginRight: "4px" }}></i>
+                          S'inscrire
+                        </Link>
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
-        </div>
-      </section>
-
-      {/* ===== SECTION CTA FINALE ===== */}
-      <section className="pb-16 bg-blueGray-200 relative pt-32">
-        <div
-          className="-mt-20 top-0 bottom-auto left-0 right-0 w-full absolute h-20"
-          style={{ transform: "translateZ(0)" }}
-        >
-          <svg
-            className="absolute bottom-0 overflow-hidden"
-            xmlns="http://www.w3.org/2000/svg"
-            preserveAspectRatio="none"
-            version="1.1"
-            viewBox="0 0 2560 100"
-            x="0"
-            y="0"
-          >
-            <polygon
-              className="text-blueGray-200 fill-current"
-              points="2560 0 2560 100 0 100"
-            ></polygon>
-          </svg>
-        </div>
-
-        <div className="container mx-auto">
-          <div className="flex flex-wrap justify-center bg-white shadow-xl rounded-lg -mt-64 py-16 px-12 relative z-10">
-            <div className="w-full text-center lg:w-8/12">
-              <p className="text-4xl text-center">
-                <span role="img" aria-label="love">
-                  😍
-                </span>
-              </p>
-              <h3 className="font-semibold text-3xl">
-                Prêt à commencer votre formation ?
-              </h3>
-              <p className="text-blueGray-500 text-lg leading-relaxed mt-4 mb-4">
-                Rejoignez des milliers d'étudiants qui ont déjà transformé leur
-                carrière grâce à nos formations. Inscrivez-vous gratuitement
-                et commencez dès aujourd'hui !
-              </p>
-              <div className="sm:block flex flex-col mt-10">
-                <Link
-                  to="/auth/register"
-                  className="get-started text-white font-bold px-6 py-4 rounded outline-none focus:outline-none mr-1 mb-2 bg-lightBlue-500 active:bg-lightBlue-600 uppercase text-sm shadow hover:shadow-lg ease-linear transition-all duration-150"
-                >
-                  <i className="fas fa-rocket mr-2"></i>
-                  Créer mon compte
-                </Link>
-                <Link
-                  to="/auth/login"
-                  className="github-star sm:ml-1 text-white font-bold px-6 py-4 rounded outline-none focus:outline-none mr-1 mb-1 bg-blueGray-700 active:bg-blueGray-600 uppercase text-sm shadow hover:shadow-lg"
-                >
-                  <i className="fas fa-sign-in-alt mr-2"></i>
-                  Se connecter
-                </Link>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
       {/* Animations */}
       <style>{`
         @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
 

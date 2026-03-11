@@ -21,6 +21,7 @@ import SettingsStudents from "StudentsPages/SettingsStudents";
 import ListeFavoris from "StudentsPages/ListeFavoris";
 import Preferences from "StudentsPages/Preference";
 import { FavoritesProvider } from "./FavoritesContext";
+import FormationDetails from "views/FormationDetails";
 
 ReactDOM.render(
   <BrowserRouter>
@@ -37,6 +38,7 @@ ReactDOM.render(
       <Route path="/settingsStudents" exact component={SettingsStudents} />
       <Route path="/liste-favoris" exact component={ListeFavoris} />
       <Route path="/preferences" exact component={Preferences} />
+      <Route path="/formation/:id" exact component={FormationDetails} />
 
 
       <Route path="/" exact component={Index} />

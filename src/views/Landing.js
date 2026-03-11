@@ -1,6 +1,6 @@
 // src/views/Landing.js
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useHistory } from "react-router-dom";
 import TextType from "./TextType";
 import RecommendationCard from "../components/Cards/RecommendationCard";
 import StudentNavbar from "components/Navbars/StudentNavbar";
@@ -8,127 +8,114 @@ import Footer from "components/Footers/Footer.js";
 import SallleDeFormation from "../assets/img/SallleDeFormation.avif";
 import { useFavorites } from "../FavoritesContext";
 import FavoriteButton from "../components/Button/FavoriteButton";
+import { registerFormation } from "../Services/apiInscriptions";
+import { getAllFormations } from "../Services/ApiFormation";
 
 export default function Landing() {
+  const history = useHistory();
   const { favoritesCount } = useFavorites();
 
   const [ville, setVille] = useState("");
   const [domaine, setDomaine] = useState("");
   const [search, setSearch] = useState("");
 
-  const formations = [
-    {
-      id: 1,
-      nom: "Développement Web Full Stack",
-      ville: "tunis",
-      domaine: "informatique",
-      description:
-        "Maîtrisez HTML, CSS, JavaScript, React et Node.js pour créer des applications web complètes et modernes.",
-      prix: 450,
-      duree: "3 mois",
-      nbEtudiants: 128,
-      rating: 4.8,
-      formateur: "Ahmed Benali",
-      niveau: "Intermédiaire",
-    },
-    {
-      id: 2,
-      nom: "Marketing Digital & Réseaux Sociaux",
-      ville: "sfax",
-      domaine: "marketing",
-      description:
-        "Apprenez à créer des campagnes marketing efficaces sur Facebook, Instagram, Google Ads et plus encore.",
-      prix: 300,
-      duree: "2 mois",
-      nbEtudiants: 95,
-      rating: 4.6,
-      formateur: "Sara Moussaoui",
-      niveau: "Débutant",
-    },
-    {
-      id: 3,
-      nom: "Data Science & Machine Learning",
-      ville: "tunis",
-      domaine: "data",
-      description:
-        "Explorez Python, Pandas, TensorFlow et les algorithmes de Machine Learning pour analyser des données massives.",
-      prix: 550,
-      duree: "4 mois",
-      nbEtudiants: 76,
-      rating: 4.9,
-      formateur: "Karim Tazi",
-      niveau: "Avancé",
-    },
-    {
-      id: 4,
-      nom: "Intelligence Artificielle Appliquée",
-      ville: "sousse",
-      domaine: "ia",
-      description:
-        "Découvrez le Deep Learning, le NLP et la vision par ordinateur avec des projets pratiques.",
-      prix: 600,
-      duree: "4 mois",
-      nbEtudiants: 54,
-      rating: 4.7,
-      formateur: "Mohamed Sahli",
-      niveau: "Avancé",
-    },
-    {
-      id: 5,
-      nom: "Développement Mobile React Native",
-      ville: "ariana",
-      domaine: "mobile",
-      description:
-        "Créez des applications mobiles iOS et Android avec React Native et déployez-les sur les stores.",
-      prix: 0,
-      gratuit: true,
-      duree: "2 mois",
-      nbEtudiants: 142,
-      rating: 4.5,
-      formateur: "Ines Ben Amor",
-      niveau: "Intermédiaire",
-    },
-    {
-      id: 6,
-      nom: "Réseaux & Cybersécurité",
-      ville: "bizerte",
-      domaine: "reseaux",
-      description:
-        "Apprenez la configuration réseau, la sécurité informatique et préparez la certification CCNA.",
-      prix: 400,
-      duree: "3 mois",
-      nbEtudiants: 63,
-      rating: 4.4,
-      formateur: "Ali Hammami",
-      niveau: "Intermédiaire",
-    },
-  ];
+  const [formations, setFormations] = useState([]);
+  const [isLoadingFormations, setIsLoadingFormations] = useState(true);
+  const [formationsError, setFormationsError] = useState("");
+  const [registeringId, setRegisteringId] = useState("");
 
-  const recommandations = [
-    {
-      id: 3,
-      nom: "Data Science & Machine Learning",
-      ville: "tunis",
-      domaine: "data",
-      score: 92,
-      description: "Explorez Python, Pandas, TensorFlow...",
-      prix: 550,
-      rating: 4.9,
-    },
-    {
-      id: 1,
-      nom: "Développement Web Full Stack",
-      ville: "tunis",
-      domaine: "informatique",
-      score: 88,
-      description: "Maîtrisez HTML, CSS, JavaScript, React...",
-      prix: 450,
-      rating: 4.8,
-    },
-  ];
+  const normalize = (v) => (v || "").toString().trim().toLowerCase();
 
-  var getImage = function (domaine) {
-    var images = {
+  const mapFormation = (f) => {
+    return {
+      _id: f._id,
+      id: f._id,
+      nom: f.name || "Sans titre",
+      ville: normalize(f.location),
+      domaine: f.domain ? normalize(f.domain) : "",
+      description: f.description || "",
+      prix: typeof f.price === "number" ? f.price : Number(f.price) || 0,
+      gratuit:
+        (typeof f.price === "number" ? f.price : Number(f.price) || 0) === 0,
+      duree: f.duree || f.duration || "",
+      nbEtudiants: f.nbEtudiants || f.studentsCount || 0,
+      rating: typeof f.rating === "number" ? f.rating : null,
+      formateur: f.instructor || "",
+      niveau: f.level || "",
+      status: f.status || "pending",
+      date: f.date || "",
+      centre: f.centre || "",
+      centreLogo: f.centreLogo || f.logo || "",
+    };
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      setIsLoadingFormations(true);
+      setFormationsError("");
+
+      try {
+        const res = await getAllFormations();
+        const list = res.data?.formationsList || [];
+        const accepted = list.filter((f) => (f.status || "") === "accepted");
+        setFormations(accepted.map(mapFormation));
+      } catch (err) {
+        console.error("Failed to load formations:", err);
+        setFormationsError(
+          err.response?.data?.error ||
+            "Erreur lors du chargement des formations"
+        );
+      } finally {
+        setIsLoadingFormations(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  const handleRegister = async (formationId) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Vous devez vous connecter d'abord.");
+      history.push("/auth/login");
+      return;
+    }
+
+    try {
+      setRegisteringId(formationId);
+      await registerFormation(formationId, token);
+      alert("✅ Inscription enregistrée avec succès en mode pending.");
+      history.push("/mes-inscriptions");
+    } catch (error) {
+      console.error("Register formation error:", error);
+      alert(
+        error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Erreur lors de l'inscription à la formation."
+      );
+    } finally {
+      setRegisteringId("");
+    }
+  };
+
+  const recommandations = formations
+    .slice()
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+    .slice(0, 2)
+    .map((f) => ({
+      id: f.id,
+      nom: f.nom,
+      ville: f.ville,
+      domaine: f.domaine,
+      score: Math.min(99, Math.round(((f.rating || 4) / 5) * 100)),
+      description: (f.description || "").slice(0, 40) + "...",
+      prix: f.prix,
+      rating: f.rating || 4.5,
+    }));
+
+  const getImage = (domaineKey) => {
+    const images = {
       informatique:
         "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&q=80",
       marketing:
@@ -139,39 +126,53 @@ export default function Landing() {
       ia: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=500&q=80",
       reseaux:
         "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=500&q=80",
+      web: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=500&q=80",
+      cloud:
+        "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&q=80",
+      design:
+        "https://images.unsplash.com/photo-1559028012-481c04fa702d?w=500&q=80",
+      cybersécurité:
+        "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=500&q=80",
     };
+
     return (
-      images[domaine] ||
+      images[normalize(domaineKey)] ||
       "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&q=80"
     );
   };
 
-  var getColor = function (domaine) {
-    var colors = {
+  const getColor = (domaineKey) => {
+    const colors = {
       informatique: "#3b82f6",
       marketing: "#8b5cf6",
       data: "#10b981",
       mobile: "#ec4899",
       ia: "#f59e0b",
       reseaux: "#ef4444",
+      web: "#0ea5e9",
+      cloud: "#6366f1",
+      design: "#14b8a6",
     };
-    return colors[domaine] || "#0ea5e9";
+    return colors[normalize(domaineKey)] || "#0ea5e9";
   };
 
-  var getIcon = function (domaine) {
-    var icons = {
+  const getIcon = (domaineKey) => {
+    const icons = {
       informatique: "fas fa-laptop-code",
       marketing: "fas fa-bullhorn",
       data: "fas fa-chart-bar",
       mobile: "fas fa-mobile-alt",
       ia: "fas fa-robot",
       reseaux: "fas fa-network-wired",
+      web: "fas fa-code",
+      cloud: "fas fa-cloud",
+      design: "fas fa-pencil-ruler",
     };
-    return icons[domaine] || "fas fa-book";
+    return icons[normalize(domaineKey)] || "fas fa-book";
   };
 
-  var getVilleName = function (ville) {
-    var names = {
+  const getVilleName = (villeKey) => {
+    const names = {
       tunis: "Tunis",
       ariana: "Ariana",
       sfax: "Sfax",
@@ -181,15 +182,30 @@ export default function Landing() {
       nabeul: "Nabeul",
       ben_arous: "Ben Arous",
       manouba: "Manouba",
+      zaghouan: "Zaghouan",
+      beja: "Béja",
+      jendouba: "Jendouba",
+      kef: "Le Kef",
+      siliana: "Siliana",
+      mahdia: "Mahdia",
+      kairouan: "Kairouan",
+      kasserine: "Kasserine",
+      sidi_bouzid: "Sidi Bouzid",
+      gabes: "Gabès",
+      medenine: "Médenine",
+      tataouine: "Tataouine",
+      gafsa: "Gafsa",
+      tozeur: "Tozeur",
+      kebili: "Kébili",
     };
-    return names[ville] || ville || "";
+    return names[normalize(villeKey)] || villeKey || "";
   };
 
   const formationsFiltrees = formations.filter((formation) => {
     return (
-      (ville === "" || formation.ville === ville) &&
-      (domaine === "" || formation.domaine === domaine) &&
-      formation.nom.toLowerCase().includes(search.toLowerCase())
+      (ville === "" || normalize(formation.ville) === normalize(ville)) &&
+      (domaine === "" || normalize(formation.domaine) === normalize(domaine)) &&
+      normalize(formation.nom).includes(normalize(search))
     );
   });
 
@@ -198,7 +214,6 @@ export default function Landing() {
       <StudentNavbar transparent />
 
       <main>
-        {/* ===== HERO ===== */}
         <div className="relative pt-16 pb-32 flex content-center items-center justify-center min-h-screen-75">
           <div
             className="absolute top-0 w-full h-full bg-center bg-cover"
@@ -281,10 +296,8 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* ===== MAIN CONTENT ===== */}
         <section className="pb-20 bg-blueGray-200 -mt-24">
           <div className="max-w-7xl mx-auto px-6">
-            {/* ===== STATS ===== */}
             <div className="flex flex-wrap -mt-4">
               <div className="w-full md:w-4/12 px-4">
                 <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg p-6 text-center transform hover:-translate-y-1 transition-all duration-300">
@@ -327,7 +340,6 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* ===== RECOMMANDATIONS IA ===== */}
             <div className="mb-12 mt-8">
               <div className="text-center mb-8">
                 <span className="text-sm font-bold uppercase text-lightBlue-500 tracking-wider">
@@ -343,17 +355,13 @@ export default function Landing() {
 
               <div className="flex flex-wrap">
                 {recommandations.map((formation) => (
-                  <div
-                    key={formation.id}
-                    className="w-full md:w-6/12 px-4 mb-4"
-                  >
+                  <div key={formation.id} className="w-full md:w-6/12 px-4 mb-4">
                     <RecommendationCard formation={formation} />
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* ===== FILTRES ===== */}
             <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
               <h3 className="text-xl font-bold text-blueGray-800 mb-6 flex items-center">
                 <i className="fas fa-filter text-lightBlue-500 mr-3"></i>
@@ -453,50 +461,8 @@ export default function Landing() {
                   </button>
                 </div>
               </div>
-
-              {(ville || domaine || search) && (
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-blueGray-500">
-                    Filtres actifs :
-                  </span>
-                  {search && (
-                    <span className="bg-lightBlue-100 text-lightBlue-700 text-xs px-3 py-1 rounded-full flex items-center">
-                      "{search}"
-                      <button
-                        onClick={() => setSearch("")}
-                        className="ml-1 hover:text-red-500"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
-                  {ville && (
-                    <span className="bg-emerald-100 text-emerald-700 text-xs px-3 py-1 rounded-full flex items-center">
-                      📍 {ville}
-                      <button
-                        onClick={() => setVille("")}
-                        className="ml-1 hover:text-red-500"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
-                  {domaine && (
-                    <span className="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full flex items-center">
-                      🏷️ {domaine}
-                      <button
-                        onClick={() => setDomaine("")}
-                        className="ml-1 hover:text-red-500"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
 
-            {/* ===== FORMATIONS ===== */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-blueGray-800">
@@ -509,7 +475,21 @@ export default function Landing() {
                 </span>
               </div>
 
-              {formationsFiltrees.length === 0 ? (
+              {isLoadingFormations && (
+                <div className="text-center py-12 text-blueGray-500">
+                  Chargement des formations...
+                </div>
+              )}
+
+              {formationsError && (
+                <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6">
+                  {formationsError}
+                </div>
+              )}
+
+              {!isLoadingFormations &&
+              !formationsError &&
+              formationsFiltrees.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto">
                     <div style={{ fontSize: "48px", marginBottom: "16px" }}>
@@ -532,21 +512,19 @@ export default function Landing() {
                 </div>
               ) : (
                 <div className="flex flex-wrap">
-                  {formationsFiltrees.map(function (formation, index) {
+                  {formationsFiltrees.map((formation, index) => {
+                    const formationId = formation._id || formation.id;
+
                     return (
                       <div
-                        key={formation.id}
+                        key={formationId}
                         className="w-full lg:w-4/12 px-4"
                         style={{
                           animation:
-                            "fadeInUp 0.5s ease-out " +
-                            index * 0.1 +
-                            "s both",
+                            "fadeInUp 0.5s ease-out " + index * 0.1 + "s both",
                         }}
                       >
-                        {/* Carte avec titre DEDANS */}
                         <div className="hover:-mt-4 relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg ease-linear transition-all duration-150 overflow-hidden group">
-                          {/* Titre dans la carte */}
                           <div
                             style={{
                               padding: "14px 16px 10px",
@@ -554,10 +532,7 @@ export default function Landing() {
                             }}
                           >
                             <Link
-                              to={
-                                "/centre/" +
-                                (formation._id || formation.id)
-                              }
+                              to={"/formation/" + formationId}
                               style={{ textDecoration: "none" }}
                             >
                               <h5
@@ -577,7 +552,6 @@ export default function Landing() {
                             </Link>
                           </div>
 
-                          {/* Image */}
                           <div
                             style={{
                               position: "relative",
@@ -590,7 +564,6 @@ export default function Landing() {
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                               src={getImage(formation.domaine)}
                             />
-
                             <div
                               style={{
                                 position: "absolute",
@@ -603,15 +576,12 @@ export default function Landing() {
                               }}
                             ></div>
 
-                            {/* Badge domaine */}
                             <span
                               style={{
                                 position: "absolute",
                                 top: "10px",
                                 left: "10px",
-                                backgroundColor: getColor(
-                                  formation.domaine
-                                ),
+                                backgroundColor: getColor(formation.domaine),
                                 color: "white",
                                 fontSize: "10px",
                                 fontWeight: "bold",
@@ -624,10 +594,9 @@ export default function Landing() {
                                 className={getIcon(formation.domaine)}
                                 style={{ marginRight: "4px" }}
                               ></i>
-                              {formation.domaine}
+                              {formation.domaine || "autre"}
                             </span>
 
-                            {/* Bouton Favori ❤️ */}
                             <div
                               style={{
                                 position: "absolute",
@@ -636,21 +605,16 @@ export default function Landing() {
                                 zIndex: 10,
                               }}
                             >
-                              <FavoriteButton
-                                formation={formation}
-                                size="sm"
-                              />
+                              <FavoriteButton formation={formation} size="sm" />
                             </div>
 
-                            {/* Prix */}
                             <span
                               style={{
                                 position: "absolute",
                                 bottom: "10px",
                                 right: "10px",
                                 backgroundColor:
-                                  formation.prix === 0 ||
-                                  formation.gratuit
+                                  formation.prix === 0 || formation.gratuit
                                     ? "#10b981"
                                     : "#1e293b",
                                 color: "white",
@@ -665,7 +629,6 @@ export default function Landing() {
                                 : formation.prix + " DT"}
                             </span>
 
-                            {/* Niveau */}
                             {formation.niveau && (
                               <span
                                 style={{
@@ -675,8 +638,7 @@ export default function Landing() {
                                   backgroundColor:
                                     formation.niveau === "Débutant"
                                       ? "#10b981"
-                                      : formation.niveau ===
-                                        "Intermédiaire"
+                                      : formation.niveau === "Intermédiaire"
                                       ? "#f59e0b"
                                       : "#ef4444",
                                   color: "white",
@@ -691,9 +653,7 @@ export default function Landing() {
                             )}
                           </div>
 
-                          {/* Contenu */}
                           <div style={{ padding: "14px 16px" }}>
-                            {/* Description */}
                             {formation.description && (
                               <p
                                 style={{
@@ -711,82 +671,81 @@ export default function Landing() {
                               </p>
                             )}
 
-                            {/* Tags */}
-                            <div
-                              style={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: "6px",
-                                marginBottom: "10px",
-                              }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: "11px",
-                                  color: "#64748b",
-                                  backgroundColor: "#f1f5f9",
-                                  padding: "3px 8px",
-                                  borderRadius: "20px",
-                                }}
-                              >
-                                📍 {getVilleName(formation.ville)}
-                              </span>
-                              {formation.duree && (
-                                <span
-                                  style={{
-                                    fontSize: "11px",
-                                    color: "#64748b",
-                                    backgroundColor: "#f1f5f9",
-                                    padding: "3px 8px",
-                                    borderRadius: "20px",
-                                  }}
-                                >
-                                  ⏱ {formation.duree}
-                                </span>
-                              )}
-                              {formation.nbEtudiants && (
-                                <span
-                                  style={{
-                                    fontSize: "11px",
-                                    color: "#64748b",
-                                    backgroundColor: "#f1f5f9",
-                                    padding: "3px 8px",
-                                    borderRadius: "20px",
-                                  }}
-                                >
-                                  👥 {formation.nbEtudiants}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Note + Formateur */}
                             <div
                               style={{
                                 display: "flex",
                                 justifyContent: "space-between",
                                 alignItems: "center",
+                                gap: "12px",
                                 marginBottom: "12px",
                                 paddingBottom: "10px",
                                 borderBottom: "1px solid #f1f5f9",
                               }}
                             >
-                              {formation.rating && (
+                              <div style={{ flex: 1, minWidth: 0 }}>
                                 <div
                                   style={{
                                     display: "flex",
-                                    alignItems: "center",
+                                    flexWrap: "wrap",
+                                    gap: "6px",
+                                    marginBottom: "8px",
                                   }}
                                 >
-                                  {[1, 2, 3, 4, 5].map(function (star) {
-                                    return (
+                                  <span
+                                    style={{
+                                      fontSize: "11px",
+                                      color: "#64748b",
+                                      backgroundColor: "#f1f5f9",
+                                      padding: "3px 8px",
+                                      borderRadius: "20px",
+                                    }}
+                                  >
+                                    📍 {getVilleName(formation.ville)}
+                                  </span>
+
+                                  {formation.duree && (
+                                    <span
+                                      style={{
+                                        fontSize: "11px",
+                                        color: "#64748b",
+                                        backgroundColor: "#f1f5f9",
+                                        padding: "3px 8px",
+                                        borderRadius: "20px",
+                                      }}
+                                    >
+                                      ⏱ {formation.duree}
+                                    </span>
+                                  )}
+
+                                  {formation.nbEtudiants ? (
+                                    <span
+                                      style={{
+                                        fontSize: "11px",
+                                        color: "#64748b",
+                                        backgroundColor: "#f1f5f9",
+                                        padding: "3px 8px",
+                                        borderRadius: "20px",
+                                      }}
+                                    >
+                                      👥 {formation.nbEtudiants}
+                                    </span>
+                                  ) : null}
+                                </div>
+
+                                {formation.rating && (
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      marginBottom: "6px",
+                                    }}
+                                  >
+                                    {[1, 2, 3, 4, 5].map((star) => (
                                       <span
                                         key={star}
                                         style={{
                                           color:
-                                            star <=
-                                            Math.floor(
-                                              formation.rating
-                                            )
+                                            star <= Math.floor(formation.rating)
                                               ? "#facc15"
                                               : "#e2e8f0",
                                           fontSize: "11px",
@@ -794,43 +753,60 @@ export default function Landing() {
                                       >
                                         ★
                                       </span>
-                                    );
-                                  })}
-                                  <span
-                                    style={{
-                                      fontSize: "11px",
-                                      color: "#94a3b8",
-                                      marginLeft: "4px",
-                                    }}
-                                  >
-                                    {formation.rating}
-                                  </span>
-                                </div>
-                              )}
-                              {formation.formateur && (
-                                <span
+                                    ))}
+                                    <span
+                                      style={{
+                                        fontSize: "11px",
+                                        color: "#94a3b8",
+                                        marginLeft: "4px",
+                                      }}
+                                    >
+                                      {formation.rating}
+                                    </span>
+                                  </div>
+                                )}
+
+                                <div
                                   style={{
                                     fontSize: "11px",
                                     color: "#94a3b8",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "6px",
                                   }}
                                 >
-                                  🎓 {formation.formateur}
-                                </span>
-                              )}
+                                  <span>
+                                    🎓{" "}
+                                    {formation.formateur ||
+                                      formation.centre ||
+                                      "Centre"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div style={{ flexShrink: 0 }}>
+                                <img
+                                  src={
+                                    formation.centreLogo ||
+                                    "https://via.placeholder.com/52"
+                                  }
+                                  alt={formation.centre || "Centre"}
+                                  style={{
+                                    width: "52px",
+                                    height: "52px",
+                                    borderRadius: "9999px",
+                                    objectFit: "cover",
+                                    border: "2px solid #e2e8f0",
+                                    backgroundColor: "#ffffff",
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                                  }}
+                                />
+                              </div>
                             </div>
 
-                            {/* Boutons */}
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: "8px",
-                              }}
-                            >
+                            <div style={{ display: "flex", gap: "8px" }}>
                               <Link
-                                to={
-                                  "/centre/" +
-                                  (formation._id || formation.id)
-                                }
+                                to={"/formation/" + formationId}
                                 style={{
                                   flex: 1,
                                   textAlign: "center",
@@ -850,11 +826,11 @@ export default function Landing() {
                                 ></i>
                                 Détails
                               </Link>
-                              <Link
-                                to={
-                                  "/inscription/" +
-                                  (formation._id || formation.id)
-                                }
+
+                              <button
+                                type="button"
+                                onClick={() => handleRegister(formationId)}
+                                disabled={registeringId === formationId}
                                 style={{
                                   textAlign: "center",
                                   backgroundColor: "#10b981",
@@ -864,15 +840,20 @@ export default function Landing() {
                                   textTransform: "uppercase",
                                   padding: "8px 12px",
                                   borderRadius: "6px",
-                                  textDecoration: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  opacity:
+                                    registeringId === formationId ? 0.7 : 1,
                                 }}
                               >
                                 <i
                                   className="fas fa-pen"
                                   style={{ marginRight: "4px" }}
                                 ></i>
-                                S'inscrire
-                              </Link>
+                                {registeringId === formationId
+                                  ? "En cours..."
+                                  : "S'inscrire"}
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -883,7 +864,6 @@ export default function Landing() {
               )}
             </div>
 
-            {/* ===== ABOUT ===== */}
             <div className="flex flex-wrap items-center mt-32">
               <div className="w-full md:w-5/12 px-4 mr-auto ml-auto">
                 <div className="text-blueGray-500 p-3 text-center inline-flex items-center justify-center w-16 h-16 mb-6 shadow-lg rounded-full bg-white">
@@ -961,7 +941,6 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ===== SERVICES ===== */}
         <section className="pb-20 relative block bg-blueGray-800">
           <div
             className="bottom-auto top-0 left-0 right-0 w-full absolute pointer-events-none overflow-hidden -mt-20 h-20"
@@ -1036,7 +1015,6 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ===== CONTACT ===== */}
         <section className="relative block py-24 lg:pt-0 bg-blueGray-800">
           <div className="container mx-auto px-4">
             <div className="flex flex-wrap justify-center lg:-mt-64 -mt-48">
