@@ -13,9 +13,7 @@ export default function Favorites() {
   useEffect(function () {
     try {
       var saved = localStorage.getItem("favorites");
-      if (saved) {
-        setFavorites(JSON.parse(saved));
-      }
+      if (saved) setFavorites(JSON.parse(saved));
     } catch (e) {
       setFavorites([]);
     }
@@ -37,17 +35,12 @@ export default function Favorites() {
   var favoritesCount = favorites.length;
 
   var filteredFavorites = favorites.filter(function (f) {
-    if (!searchTerm || searchTerm === "") {
-      return true;
-    }
+    if (!searchTerm || searchTerm === "") return true;
     var search = searchTerm.toLowerCase();
-    var nom = f.nom || "";
-    var ville = f.ville || "";
-    var domaine = f.domaine || "";
     return (
-      nom.toLowerCase().includes(search) ||
-      ville.toLowerCase().includes(search) ||
-      domaine.toLowerCase().includes(search)
+      (f.nom || "").toLowerCase().includes(search) ||
+      (f.ville || "").toLowerCase().includes(search) ||
+      (f.domaine || "").toLowerCase().includes(search)
     );
   });
 
@@ -82,154 +75,288 @@ export default function Favorites() {
 
   var getImage = function (domaine) {
     var images = {
-      informatique: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&q=70",
-      marketing: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=70",
+      informatique:
+        "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&q=70",
+      marketing:
+        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=70",
       data: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&q=70",
-      mobile: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&q=70",
+      mobile:
+        "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&q=70",
       ia: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=400&q=70",
-      reseaux: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&q=70",
+      reseaux:
+        "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&q=70",
     };
-    return images[domaine] || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=70";
+    return (
+      images[domaine] ||
+      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=70"
+    );
   };
 
   return (
     <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+        .fav-root { font-family: 'DM Sans', sans-serif; }
+        .fav-heading { font-family: 'Syne', sans-serif; }
+
+        .fav-hero {
+          position: relative; min-height: 38vh;
+          display: flex; align-items: center; justify-content: center;
+          overflow: hidden; padding: 90px 0 80px;
+        }
+        .fav-hero-bg {
+          position: absolute; inset: 0;
+          background-image: url('https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=1470&q=80');
+          background-size: cover; background-position: center;
+        }
+        .fav-hero-bg::after {
+          content: ''; position: absolute; inset: 0;
+          background: linear-gradient(135deg, rgba(2,6,23,0.82) 0%, rgba(15,23,42,0.68) 100%);
+        }
+        .fav-hero-content {
+          position: relative; z-index: 2;
+          text-align: center; max-width: 640px; margin: 0 auto; padding: 0 24px;
+        }
+        .fav-hero-title {
+          font-family: 'Syne', sans-serif;
+          font-size: clamp(2rem, 5vw, 3.2rem);
+          font-weight: 800; color: #fff; line-height: 1.15; margin-bottom: 12px;
+          min-height: 3.5rem; display: flex; align-items: center; justify-content: center;
+        }
+        .fav-hero-sub { font-size: 1rem; color: rgba(255,255,255,0.6); margin-bottom: 28px; }
+        .fav-hero-btn {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: linear-gradient(135deg, #0ea5e9, #0284c7);
+          color: #fff; font-family: 'Syne', sans-serif; font-weight: 700;
+          font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.8px;
+          padding: 13px 28px; border-radius: 50px; text-decoration: none;
+          box-shadow: 0 6px 24px rgba(14,165,233,0.4); transition: all 0.25s;
+        }
+        .fav-hero-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(14,165,233,0.5); color: #fff; }
+        .fav-wave { position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; }
+
+        .fav-section {
+          background: #f1f5f9;
+          background-image: radial-gradient(ellipse 70% 50% at 5% 0%, rgba(14,165,233,0.06), transparent),
+            radial-gradient(ellipse 60% 40% at 95% 100%, rgba(2,132,199,0.05), transparent);
+          padding: 52px 0 80px;
+        }
+
+        .fav-toolbar {
+          background: #fff; border-radius: 18px; padding: 18px 24px; margin-bottom: 28px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+          border: 1px solid rgba(226,232,240,0.8);
+          display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
+        }
+        .fav-toolbar-left { display: flex; align-items: center; gap: 14px; }
+        .fav-heart-icon {
+          width: 46px; height: 46px; border-radius: 14px;
+          background: linear-gradient(135deg, #fef2f2, #fee2e2);
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .fav-toolbar-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .fav-search-wrap { position: relative; }
+        .fav-search-wrap input {
+          width: 220px; padding: 9px 14px 9px 36px;
+          border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.82rem;
+          font-family: 'DM Sans', sans-serif; outline: none; color: #334155;
+          transition: border-color 0.2s, box-shadow 0.2s; background: #f8fafc;
+        }
+        .fav-search-wrap input:focus { border-color: #7dd3fc; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); background: #fff; }
+        .fav-search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.75rem; }
+        .fav-clear-btn {
+          display: flex; align-items: center; gap: 6px;
+          padding: 9px 16px; background: #fef2f2; color: #ef4444;
+          border: 1px solid #fecaca; border-radius: 10px; font-size: 0.8rem;
+          font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+        }
+        .fav-clear-btn:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+
+        .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+
+        .fav-card {
+          background: #fff; border-radius: 18px; overflow: hidden;
+          border: 1px solid rgba(226,232,240,0.7);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);
+          transition: transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94), box-shadow 0.28s;
+          animation: fav-card-in 0.4s ease both;
+        }
+        .fav-card:hover { transform: translateY(-5px); box-shadow: 0 2px 6px rgba(0,0,0,0.04), 0 16px 40px rgba(0,0,0,0.12); }
+        .fav-card-img { position: relative; height: 130px; overflow: hidden; }
+        .fav-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; display: block; }
+        .fav-card:hover .fav-card-img img { transform: scale(1.07); }
+        .fav-card-img-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%); }
+        .fav-domain-badge {
+          position: absolute; top: 10px; left: 10px;
+          font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+          color: #fff; padding: 3px 10px; border-radius: 50px;
+        }
+        .fav-price-badge {
+          position: absolute; bottom: 10px; right: 10px;
+          background: rgba(16,185,129,0.95); color: #fff;
+          font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 50px;
+        }
+        .fav-card-body { padding: 14px 16px; }
+        .fav-card-title {
+          font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem;
+          color: #0f172a; margin-bottom: 5px; text-decoration: none;
+          display: block; line-height: 1.3; transition: color 0.2s;
+        }
+        .fav-card-title:hover { color: #0ea5e9; }
+        .fav-meta { font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+        .fav-added { font-size: 0.68rem; color: #cbd5e1; margin-bottom: 12px; }
+        .fav-card-actions { display: flex; gap: 8px; }
+        .fav-details-btn {
+          flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+          background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff;
+          font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.72rem;
+          text-transform: uppercase; letter-spacing: 0.4px; padding: 8px; border-radius: 10px;
+          text-decoration: none; box-shadow: 0 3px 10px rgba(14,165,233,0.3); transition: all 0.2s;
+        }
+        .fav-details-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(14,165,233,0.4); color: #fff; }
+        .fav-remove-btn {
+          width: 34px; height: 34px; border-radius: 10px;
+          background: #fef2f2; border: 1px solid #fecaca; color: #ef4444;
+          cursor: pointer; display: flex; align-items: center; justify-content: center;
+          font-size: 0.82rem; transition: all 0.2s; flex-shrink: 0;
+        }
+        .fav-remove-btn:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+
+        .fav-empty { text-align: center; padding: 60px 0; }
+        .fav-empty-card {
+          background: #fff; border-radius: 24px; padding: 56px 40px;
+          max-width: 440px; margin: 0 auto;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.07);
+          border: 1px solid rgba(226,232,240,0.8);
+        }
+        .fav-empty-emoji { font-size: 3.5rem; margin-bottom: 18px; display: block; }
+        .fav-empty-title { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .fav-empty-sub { font-size: 0.87rem; color: #94a3b8; margin-bottom: 24px; line-height: 1.6; }
+        .fav-explore-btn {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff;
+          font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem;
+          text-transform: uppercase; letter-spacing: 0.6px; padding: 12px 28px;
+          border-radius: 50px; text-decoration: none;
+          box-shadow: 0 5px 18px rgba(14,165,233,0.35); transition: all 0.25s;
+        }
+        .fav-explore-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(14,165,233,0.45); color: #fff; }
+        .fav-reset-btn {
+          display: inline-block; padding: 10px 24px; background: #0ea5e9; color: #fff;
+          border: none; border-radius: 10px; font-weight: 700; font-size: 0.85rem;
+          cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+        }
+        .fav-reset-btn:hover { background: #0284c7; }
+
+        .fav-modal-overlay {
+          position: fixed; inset: 0; background: rgba(15,23,42,0.6);
+          backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;
+          z-index: 9999; animation: fav-fade-in 0.2s ease;
+        }
+        .fav-modal {
+          background: #fff; border-radius: 24px; padding: 40px 36px;
+          max-width: 380px; width: 90%; text-align: center;
+          box-shadow: 0 24px 80px rgba(0,0,0,0.2); animation: fav-slide-up 0.25s ease;
+        }
+        .fav-modal-emoji { font-size: 3rem; margin-bottom: 16px; display: block; }
+        .fav-modal-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .fav-modal-sub { font-size: 0.85rem; color: #94a3b8; margin-bottom: 24px; }
+        .fav-modal-actions { display: flex; gap: 10px; justify-content: center; }
+        .fav-modal-cancel {
+          padding: 10px 22px; background: #f1f5f9; color: #475569;
+          border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 600;
+          font-size: 0.85rem; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+        }
+        .fav-modal-cancel:hover { background: #e2e8f0; }
+        .fav-modal-confirm {
+          padding: 10px 22px; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff;
+          border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-weight: 700;
+          font-size: 0.85rem; cursor: pointer; box-shadow: 0 4px 14px rgba(239,68,68,0.35); transition: all 0.2s;
+        }
+        .fav-modal-confirm:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(239,68,68,0.45); }
+
+        @keyframes fav-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fav-slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fav-card-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
+
       <StudentNavbar />
 
-      <main>
-        <div
-          className="relative pt-24 pb-32 flex content-center items-center justify-center"
-          style={{ minHeight: "35vh" }}
-        >
-          <div
-            className="absolute top-0 w-full h-full bg-center bg-cover"
-            style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=1470&q=80')",
-            }}
-          >
-            <span className="absolute w-full h-full bg-black opacity-75"></span>
-          </div>
-
-          <div className="container relative mx-auto px-4">
-            <div className="flex flex-wrap justify-center text-center">
-              <div className="w-full lg:w-7/12 px-4">
-                <h1 className="text-white font-semibold text-5xl">
-                  <TextType
-                    text={[
-                      "Mes Favoris ❤️",
-                      "Les formations que j'aime.",
-                      favoritesCount +
-                        " formation" +
-                        (favoritesCount > 1 ? "s" : "") +
-                        " sauvegardée" +
-                        (favoritesCount > 1 ? "s" : "") +
-                        ".",
-                    ]}
-                    typingSpeed={75}
-                    deletingSpeed={50}
-                    pauseDuration={2000}
-                    showCursor
-                    cursorCharacter="_"
-                  />
-                </h1>
-                <p className="mt-4 text-lg text-blueGray-200">
-                  {favoritesCount > 0
-                    ? favoritesCount +
-                      " formation" +
-                      (favoritesCount > 1 ? "s" : "") +
-                      " sauvegardée" +
-                      (favoritesCount > 1 ? "s" : "")
-                    : "Aucun favori pour le moment"}
-                </p>
-                <Link
-                  to="/landing"
-                  className="inline-block mt-8 bg-lightBlue-500 text-white font-bold uppercase text-sm px-8 py-4 rounded-full shadow-lg hover:bg-lightBlue-600 transition-all duration-150"
-                >
-                  <i className="fas fa-search mr-2"></i>
-                  Découvrir des formations
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden pointer-events-none h-20">
-            <svg
-              className="absolute bottom-0 w-full h-full"
-              xmlns="http://www.w3.org/2000/svg"
-              preserveAspectRatio="none"
-              viewBox="0 0 2560 100"
-            >
-              <polygon
-                className="fill-current text-blueGray-100"
-                points="2560 0 2560 100 0 100"
-              />
-            </svg>
-          </div>
+      <div className="fav-root fav-hero">
+        <div className="fav-hero-bg"></div>
+        <div className="fav-hero-content">
+          <h1 className="fav-hero-title">
+            <TextType
+              text={["Mes Favoris "]}
+              typingSpeed={75}
+              deletingSpeed={50}
+              pauseDuration={2000}
+              showCursor
+            />
+          </h1>
+          <p className="fav-hero-sub">
+            {favoritesCount > 0
+              ? favoritesCount +
+                " formation" +
+                (favoritesCount > 1 ? "s" : "") +
+                " sauvegardée" +
+                (favoritesCount > 1 ? "s" : "")
+              : "Aucun favori pour le moment"}
+          </p>
+          <Link to="/landing" className="fav-hero-btn">
+            <i className="fas fa-search"></i>Découvrir des formations
+          </Link>
         </div>
-      </main>
-
-      <section className="relative bg-blueGray-100 py-16">
-        <div className="container mx-auto px-4">
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "12px",
-              padding: "20px",
-              marginBottom: "24px",
-              boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "16px",
-            }}
+        <div className="fav-wave">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="none"
+            viewBox="0 0 2560 100"
+            style={{ display: "block", width: "100%", height: 80 }}
           >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <div
-                style={{
-                  backgroundColor: "#fef2f2",
-                  borderRadius: "50%",
-                  width: "48px",
-                  height: "48px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: "12px",
-                }}
-              >
+            <polygon fill="#f1f5f9" points="2560 0 2560 100 0 100" />
+          </svg>
+        </div>
+      </div>
+
+      <section className="fav-root fav-section">
+        <div className="container mx-auto px-4">
+          <div className="fav-toolbar">
+            <div className="fav-toolbar-left">
+              <div className="fav-heart-icon">
                 <i
                   className="fas fa-heart"
-                  style={{ color: "#ef4444", fontSize: "20px" }}
+                  style={{ color: "#ef4444", fontSize: 20 }}
                 ></i>
               </div>
               <div>
                 <h2
+                  className="fav-heading"
                   style={{
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                    color: "#1e293b",
+                    fontSize: "1.05rem",
+                    fontWeight: 700,
+                    color: "#0f172a",
                     margin: 0,
                   }}
                 >
                   Mes Favoris
                 </h2>
-                <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>
-                  {favoritesCount} formation
+                <p
+                  style={{
+                    fontSize: "0.78rem",
+                    color: "#94a3b8",
+                    margin: 0,
+                  }}
+                >
+                  {favoritesCount} formation{favoritesCount > 1 ? "s" : ""} sauvegardée
                   {favoritesCount > 1 ? "s" : ""}
                 </p>
               </div>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "8px",
-                flexWrap: "wrap",
-                alignItems: "center",
-              }}
-            >
-              <div style={{ position: "relative" }}>
+            <div className="fav-toolbar-right">
+              <div className="fav-search-wrap">
+                <i className="fas fa-search"></i>
                 <input
                   type="text"
                   placeholder="Rechercher..."
@@ -237,135 +364,42 @@ export default function Favorites() {
                   onChange={function (e) {
                     setSearchTerm(e.target.value);
                   }}
-                  style={{
-                    width: "220px",
-                    padding: "8px 12px 8px 32px",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "8px",
-                    fontSize: "13px",
-                    outline: "none",
-                  }}
                 />
-                <i
-                  className="fas fa-search"
-                  style={{
-                    position: "absolute",
-                    left: "10px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "#94a3b8",
-                    fontSize: "12px",
-                  }}
-                ></i>
               </div>
 
               {favoritesCount > 0 && (
                 <button
+                  className="fav-clear-btn"
                   onClick={function () {
                     setShowConfirmClear(true);
                   }}
-                  style={{
-                    padding: "8px 14px",
-                    backgroundColor: "#fef2f2",
-                    color: "#ef4444",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                  }}
                 >
-                  <i
-                    className="fas fa-trash-alt"
-                    style={{ marginRight: "4px" }}
-                  ></i>
-                  Tout supprimer
+                  <i className="fas fa-trash-alt"></i>Tout supprimer
                 </button>
               )}
             </div>
           </div>
 
           {showConfirmClear && (
-            <div
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "rgba(0,0,0,0.5)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 9999,
-              }}
-            >
-              <div
-                style={{
-                  backgroundColor: "white",
-                  borderRadius: "16px",
-                  padding: "32px",
-                  maxWidth: "400px",
-                  width: "90%",
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: "40px", marginBottom: "16px" }}>
-                  💔
-                </div>
-                <h3
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: "bold",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Supprimer tous les favoris ?
-                </h3>
-                <p
-                  style={{
-                    color: "#94a3b8",
-                    marginBottom: "20px",
-                    fontSize: "14px",
-                  }}
-                >
-                  Cette action est irréversible.
-                </p>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    justifyContent: "center",
-                  }}
-                >
+            <div className="fav-modal-overlay">
+              <div className="fav-modal">
+                <span className="fav-modal-emoji">💔</span>
+                <h3 className="fav-modal-title">Supprimer tous les favoris ?</h3>
+                <p className="fav-modal-sub">Cette action est irréversible.</p>
+                <div className="fav-modal-actions">
                   <button
+                    className="fav-modal-cancel"
                     onClick={function () {
                       setShowConfirmClear(false);
-                    }}
-                    style={{
-                      padding: "8px 20px",
-                      backgroundColor: "#e2e8f0",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontWeight: "600",
-                      cursor: "pointer",
                     }}
                   >
                     Annuler
                   </button>
                   <button
+                    className="fav-modal-confirm"
                     onClick={function () {
                       clearFavorites();
                       setShowConfirmClear(false);
-                    }}
-                    style={{
-                      padding: "8px 20px",
-                      backgroundColor: "#ef4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontWeight: "600",
-                      cursor: "pointer",
                     }}
                   >
                     Tout supprimer
@@ -376,123 +410,49 @@ export default function Favorites() {
           )}
 
           {filteredFavorites.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="fav-grid">
               {filteredFavorites.map(function (formation, index) {
                 var formationId = formation._id || formation.id;
 
                 return (
                   <div
                     key={formationId || index}
-                    style={{
-                      backgroundColor: "white",
-                      borderRadius: "12px",
-                      overflow: "hidden",
-                      boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                      transition: "all 0.3s ease",
-                    }}
-                    className="hover:shadow-xl transform hover:-translate-y-1"
+                    className="fav-card"
+                    style={{ animationDelay: `${index * 0.06}s` }}
                   >
-                    <div
-                      style={{
-                        position: "relative",
-                        height: "120px",
-                        overflow: "hidden",
-                      }}
-                    >
+                    <div className="fav-card-img">
                       <img
                         src={getImage(formation.domaine)}
                         alt={formation.nom || "Formation"}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
                       />
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background:
-                            "linear-gradient(to top, rgba(0,0,0,0.5), transparent)",
-                        }}
-                      ></div>
+                      <div className="fav-card-img-overlay"></div>
 
                       <span
-                        style={{
-                          position: "absolute",
-                          top: "8px",
-                          left: "8px",
-                          backgroundColor: getColor(formation.domaine),
-                          color: "white",
-                          fontSize: "9px",
-                          fontWeight: "bold",
-                          padding: "2px 8px",
-                          borderRadius: "20px",
-                          textTransform: "uppercase",
-                        }}
+                        className="fav-domain-badge"
+                        style={{ background: getColor(formation.domaine) }}
                       >
                         {formation.domaine || "Autre"}
                       </span>
 
-                      <span
-                        style={{
-                          position: "absolute",
-                          bottom: "8px",
-                          right: "8px",
-                          backgroundColor: "#10b981",
-                          color: "white",
-                          fontSize: "11px",
-                          fontWeight: "bold",
-                          padding: "2px 8px",
-                          borderRadius: "20px",
-                        }}
-                      >
-                        {formation.prix
-                          ? formation.prix + " DT"
-                          : "Gratuit"}
+                      <span className="fav-price-badge">
+                        {formation.prix ? formation.prix + " DT" : "Gratuit"}
                       </span>
                     </div>
 
-                    <div style={{ padding: "12px" }}>
+                    <div className="fav-card-body">
                       <Link
-                        to={"/centre/" + formationId}
-                        style={{ textDecoration: "none" }}
+                        to={"/formation/" + formationId}
+                        className="fav-card-title"
                       >
-                        <h4
-                          style={{
-                            fontWeight: "bold",
-                            fontSize: "13px",
-                            color: "#1e293b",
-                            marginBottom: "4px",
-                            cursor: "pointer",
-                          }}
-                          className="hover:text-lightBlue-600"
-                        >
-                          {formation.nom || "Sans nom"}
-                        </h4>
+                        {formation.nom || "Sans nom"}
                       </Link>
 
-                      <p
-                        style={{
-                          fontSize: "11px",
-                          color: "#94a3b8",
-                          marginBottom: "6px",
-                        }}
-                      >
-                        📍 {getVilleName(formation.ville)}
+                      <p className="fav-meta">
+                        <span>📍</span> {getVilleName(formation.ville)}
                       </p>
 
                       {formation.rating && (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            marginBottom: "6px",
-                          }}
-                        >
+                        <div style={{ marginBottom: 4 }}>
                           {[1, 2, 3, 4, 5].map(function (star) {
                             return (
                               <span
@@ -502,7 +462,7 @@ export default function Favorites() {
                                     star <= Math.floor(formation.rating)
                                       ? "#facc15"
                                       : "#e2e8f0",
-                                  fontSize: "10px",
+                                  fontSize: "0.72rem",
                                 }}
                               >
                                 ★
@@ -511,9 +471,9 @@ export default function Favorites() {
                           })}
                           <span
                             style={{
-                              fontSize: "10px",
+                              fontSize: "0.7rem",
                               color: "#94a3b8",
-                              marginLeft: "4px",
+                              marginLeft: 3,
                             }}
                           >
                             {formation.rating}
@@ -522,25 +482,13 @@ export default function Favorites() {
                       )}
 
                       {formation.formateur && (
-                        <p
-                          style={{
-                            fontSize: "10px",
-                            color: "#94a3b8",
-                            marginBottom: "8px",
-                          }}
-                        >
-                          🎓 {formation.formateur}
+                        <p className="fav-meta">
+                          <span>🎓</span> {formation.formateur}
                         </p>
                       )}
 
                       {formation.addedAt && (
-                        <p
-                          style={{
-                            fontSize: "9px",
-                            color: "#cbd5e1",
-                            marginBottom: "8px",
-                          }}
-                        >
+                        <p className="fav-added">
                           ⏱ Ajouté le{" "}
                           {new Date(formation.addedAt).toLocaleDateString(
                             "fr-FR",
@@ -553,40 +501,22 @@ export default function Favorites() {
                         </p>
                       )}
 
-                      <div style={{ display: "flex", gap: "6px" }}>
+                      <div className="fav-card-actions">
                         <Link
-                          to={"/centre/" + formationId}
-                          style={{
-                            flex: 1,
-                            textAlign: "center",
-                            backgroundColor: "#0ea5e9",
-                            color: "white",
-                            fontWeight: "bold",
-                            fontSize: "10px",
-                            textTransform: "uppercase",
-                            padding: "6px 8px",
-                            borderRadius: "6px",
-                            textDecoration: "none",
-                          }}
+                          to={"/formation/" + formationId}
+                          className="fav-details-btn"
                         >
                           <i
                             className="fas fa-eye"
-                            style={{ marginRight: "4px" }}
+                            style={{ fontSize: "0.7rem" }}
                           ></i>
                           Détails
                         </Link>
+
                         <button
+                          className="fav-remove-btn"
                           onClick={function () {
                             removeFavorite(formationId);
-                          }}
-                          style={{
-                            padding: "6px 10px",
-                            backgroundColor: "#fef2f2",
-                            color: "#ef4444",
-                            border: "none",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            fontSize: "12px",
                           }}
                           title="Retirer des favoris"
                         >
@@ -599,46 +529,19 @@ export default function Favorites() {
               })}
             </div>
           ) : (
-            <div style={{ textAlign: "center", padding: "60px 0" }}>
-              <div
-                style={{
-                  backgroundColor: "white",
-                  borderRadius: "16px",
-                  padding: "48px",
-                  maxWidth: "450px",
-                  margin: "0 auto",
-                  boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
-                }}
-              >
+            <div className="fav-empty">
+              <div className="fav-empty-card">
                 {searchTerm ? (
                   <>
-                    <div style={{ fontSize: "48px", marginBottom: "16px" }}>
-                      🔍
-                    </div>
-                    <h3
-                      style={{
-                        fontSize: "20px",
-                        fontWeight: "bold",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      Aucun résultat
-                    </h3>
-                    <p style={{ color: "#94a3b8", marginBottom: "16px" }}>
+                    <span className="fav-empty-emoji">🔍</span>
+                    <h3 className="fav-empty-title">Aucun résultat</h3>
+                    <p className="fav-empty-sub">
                       Aucune formation ne correspond à "{searchTerm}"
                     </p>
                     <button
+                      className="fav-reset-btn"
                       onClick={function () {
                         setSearchTerm("");
-                      }}
-                      style={{
-                        padding: "10px 20px",
-                        backgroundColor: "#0ea5e9",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        fontWeight: "bold",
-                        cursor: "pointer",
                       }}
                     >
                       Effacer la recherche
@@ -646,47 +549,16 @@ export default function Favorites() {
                   </>
                 ) : (
                   <>
-                    <div style={{ fontSize: "48px", marginBottom: "16px" }}>
-                      💔
-                    </div>
-                    <h3
-                      style={{
-                        fontSize: "20px",
-                        fontWeight: "bold",
-                        marginBottom: "8px",
-                      }}
-                    >
+                    <span className="fav-empty-emoji">💔</span>
+                    <h3 className="fav-empty-title">
                       Aucun favori pour le moment
                     </h3>
-                    <p
-                      style={{
-                        color: "#94a3b8",
-                        marginBottom: "20px",
-                        fontSize: "14px",
-                      }}
-                    >
+                    <p className="fav-empty-sub">
                       Cliquez sur le bouton ❤️ sur une formation pour la
                       sauvegarder ici.
                     </p>
-                    <Link
-                      to="/landing"
-                      style={{
-                        display: "inline-block",
-                        padding: "12px 24px",
-                        backgroundColor: "#0ea5e9",
-                        color: "white",
-                        fontWeight: "bold",
-                        fontSize: "13px",
-                        textTransform: "uppercase",
-                        borderRadius: "25px",
-                        textDecoration: "none",
-                      }}
-                    >
-                      <i
-                        className="fas fa-compass"
-                        style={{ marginRight: "8px" }}
-                      ></i>
-                      Explorer les formations
+                    <Link to="/landing" className="fav-explore-btn">
+                      <i className="fas fa-compass"></i>Explorer les formations
                     </Link>
                   </>
                 )}
