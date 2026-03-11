@@ -498,21 +498,36 @@ export default function CardTableCentres({ color }) {
             <div className="grid grid-cols-2 gap-4">
               {/* Logo URL */}
               <div className="col-span-2">
-                <label className="block text-xs font-bold mb-1">URL du logo</label>
-                <input
-                  type="text"
-                  value={selectedCentre.logo}
-                  onChange={(e) =>
-                    setSelectedCentre({ ...selectedCentre, logo: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border rounded text-sm"
-                />
-                <img
-                  src={selectedCentre.logo || "https://via.placeholder.com/80"}
-                  alt="preview"
-                  className="h-16 w-16 rounded-full border mt-2"
-                />
-              </div>
+  <label className="block text-xs font-bold mb-1">Logo du centre</label>
+
+  {/* Choisir image depuis PC */}
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedCentre({
+          ...selectedCentre,
+          logo: reader.result, // base64 image
+        });
+      };
+
+      reader.readAsDataURL(file);
+    }}
+    className="w-full px-3 py-2 border rounded text-sm"
+  />
+
+  {/* Preview */}
+  <img
+    src={selectedCentre.logo || "https://via.placeholder.com/80"}
+    alt="preview"
+    className="h-16 w-16 rounded-full border mt-2 object-cover"
+  />
+</div>
 
               {/* Nom */}
               <input
