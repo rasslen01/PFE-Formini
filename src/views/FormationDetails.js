@@ -75,13 +75,19 @@ export default function FormationDetails() {
     } catch { return ""; }
   }, [formation]);
 
-  const imageUrl = useMemo(() => {
-    if (!formation) return "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80";
+  // ✅ Nouveau — même logique que CardTableFormations
+const BACKEND_URL = "http://localhost:5000";
+
+const imageUrl = useMemo(() => {
+    const fallback = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80";
+    if (!formation) return fallback;
     const img = formation.imageUrl || formation.image || "";
-    if (img.startsWith("http")) return img;
-    if (img && !img.includes("default-formation.png")) return `http://localhost:5000/uploads/${img}`;
-    return "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80";
-  }, [formation]);
+    if (!img || img === "default-formation.png" || img === "") return fallback;
+    if (img.startsWith("http") || img.startsWith("data:")) return img;
+    // ✅ img = "/uploads/formation-xxx.webp" → ajouter seulement BACKEND_URL
+    const cleanPath = img.startsWith("/") ? img : `/${img}`;
+    return `${BACKEND_URL}${cleanPath}`;
+}, [formation]);
 
   const caracteristiques = {
     Competences: Array.isArray(formation?.skills) && formation.skills.length > 0 ? formation.skills.join(", ") : normalize(formation?.competences) || "React, HTML, CSS, JavaScript",

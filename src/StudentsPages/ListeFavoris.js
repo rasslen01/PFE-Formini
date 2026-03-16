@@ -5,6 +5,8 @@ import StudentNavbar from "components/Navbars/StudentNavbar";
 import Footer from "components/Footers/Footer";
 import TextType from "../views/TextType";
 
+const BACKEND_URL = "http://localhost:5000";
+
 export default function Favorites() {
   var [favorites, setFavorites] = useState([]);
   var [searchTerm, setSearchTerm] = useState("");
@@ -46,50 +48,43 @@ export default function Favorites() {
 
   var getVilleName = function (ville) {
     var names = {
-      tunis: "Tunis",
-      ariana: "Ariana",
-      sfax: "Sfax",
-      sousse: "Sousse",
-      bizerte: "Bizerte",
-      monastir: "Monastir",
-      nabeul: "Nabeul",
-      ben_arous: "Ben Arous",
-      manouba: "Manouba",
-      gabes: "Gabès",
-      kairouan: "Kairouan",
+      tunis: "Tunis", ariana: "Ariana", sfax: "Sfax", sousse: "Sousse",
+      bizerte: "Bizerte", monastir: "Monastir", nabeul: "Nabeul",
+      ben_arous: "Ben Arous", manouba: "Manouba", gabes: "Gabès", kairouan: "Kairouan",
     };
     return names[ville] || ville || "Non précisée";
   };
 
   var getColor = function (domaine) {
     var colors = {
-      informatique: "#3b82f6",
-      marketing: "#8b5cf6",
-      data: "#10b981",
-      mobile: "#ec4899",
-      ia: "#f59e0b",
-      reseaux: "#ef4444",
+      informatique: "#3b82f6", marketing: "#8b5cf6", data: "#10b981",
+      mobile: "#ec4899", ia: "#f59e0b", reseaux: "#ef4444",
     };
     return colors[domaine] || "#0ea5e9";
   };
 
-  var getImage = function (domaine) {
+  // ✅ Image par défaut selon domaine (fallback)
+  var getDefaultImage = function (domaine) {
     var images = {
-      informatique:
-        "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&q=70",
-      marketing:
-        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=70",
-      data: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&q=70",
-      mobile:
-        "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&q=70",
-      ia: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=400&q=70",
-      reseaux:
-        "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&q=70",
+      informatique: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&q=70",
+      marketing:    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=70",
+      data:         "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&q=70",
+      mobile:       "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&q=70",
+      ia:           "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=400&q=70",
+      reseaux:      "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&q=70",
     };
-    return (
-      images[domaine] ||
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=70"
-    );
+    return images[domaine] || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=70";
+  };
+
+  // ✅ Priorité: image uploadée → fallback domaine
+  var getFormationImage = function (formation) {
+    var img = formation.image || "";
+    if (!img || img === "" || img === "default-formation.png") {
+      return getDefaultImage(formation.domaine);
+    }
+    if (img.startsWith("http") || img.startsWith("data:")) return img;
+    var cleanPath = img.startsWith("/") ? img : "/" + img;
+    return BACKEND_URL + cleanPath;
   };
 
   return (
@@ -286,21 +281,11 @@ export default function Favorites() {
         <div className="fav-hero-bg"></div>
         <div className="fav-hero-content">
           <h1 className="fav-hero-title">
-            <TextType
-              text={["Mes Favoris "]}
-              typingSpeed={75}
-              deletingSpeed={50}
-              pauseDuration={2000}
-              showCursor
-            />
+            <TextType text={["Mes Favoris "]} typingSpeed={75} deletingSpeed={50} pauseDuration={2000} showCursor />
           </h1>
           <p className="fav-hero-sub">
             {favoritesCount > 0
-              ? favoritesCount +
-                " formation" +
-                (favoritesCount > 1 ? "s" : "") +
-                " sauvegardée" +
-                (favoritesCount > 1 ? "s" : "")
+              ? favoritesCount + " formation" + (favoritesCount > 1 ? "s" : "") + " sauvegardée" + (favoritesCount > 1 ? "s" : "")
               : "Aucun favori pour le moment"}
           </p>
           <Link to="/landing" className="fav-hero-btn">
@@ -308,12 +293,7 @@ export default function Favorites() {
           </Link>
         </div>
         <div className="fav-wave">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            preserveAspectRatio="none"
-            viewBox="0 0 2560 100"
-            style={{ display: "block", width: "100%", height: 80 }}
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 2560 100" style={{ display: "block", width: "100%", height: 80 }}>
             <polygon fill="#f1f5f9" points="2560 0 2560 100 0 100" />
           </svg>
         </div>
@@ -324,32 +304,14 @@ export default function Favorites() {
           <div className="fav-toolbar">
             <div className="fav-toolbar-left">
               <div className="fav-heart-icon">
-                <i
-                  className="fas fa-heart"
-                  style={{ color: "#ef4444", fontSize: 20 }}
-                ></i>
+                <i className="fas fa-heart" style={{ color: "#ef4444", fontSize: 20 }}></i>
               </div>
               <div>
-                <h2
-                  className="fav-heading"
-                  style={{
-                    fontSize: "1.05rem",
-                    fontWeight: 700,
-                    color: "#0f172a",
-                    margin: 0,
-                  }}
-                >
+                <h2 className="fav-heading" style={{ fontSize: "1.05rem", fontWeight: 700, color: "#0f172a", margin: 0 }}>
                   Mes Favoris
                 </h2>
-                <p
-                  style={{
-                    fontSize: "0.78rem",
-                    color: "#94a3b8",
-                    margin: 0,
-                  }}
-                >
-                  {favoritesCount} formation{favoritesCount > 1 ? "s" : ""} sauvegardée
-                  {favoritesCount > 1 ? "s" : ""}
+                <p style={{ fontSize: "0.78rem", color: "#94a3b8", margin: 0 }}>
+                  {favoritesCount} formation{favoritesCount > 1 ? "s" : ""} sauvegardée{favoritesCount > 1 ? "s" : ""}
                 </p>
               </div>
             </div>
@@ -357,23 +319,11 @@ export default function Favorites() {
             <div className="fav-toolbar-right">
               <div className="fav-search-wrap">
                 <i className="fas fa-search"></i>
-                <input
-                  type="text"
-                  placeholder="Rechercher..."
-                  value={searchTerm}
-                  onChange={function (e) {
-                    setSearchTerm(e.target.value);
-                  }}
-                />
+                <input type="text" placeholder="Rechercher..." value={searchTerm}
+                  onChange={function (e) { setSearchTerm(e.target.value); }} />
               </div>
-
               {favoritesCount > 0 && (
-                <button
-                  className="fav-clear-btn"
-                  onClick={function () {
-                    setShowConfirmClear(true);
-                  }}
-                >
+                <button className="fav-clear-btn" onClick={function () { setShowConfirmClear(true); }}>
                   <i className="fas fa-trash-alt"></i>Tout supprimer
                 </button>
               )}
@@ -387,23 +337,8 @@ export default function Favorites() {
                 <h3 className="fav-modal-title">Supprimer tous les favoris ?</h3>
                 <p className="fav-modal-sub">Cette action est irréversible.</p>
                 <div className="fav-modal-actions">
-                  <button
-                    className="fav-modal-cancel"
-                    onClick={function () {
-                      setShowConfirmClear(false);
-                    }}
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    className="fav-modal-confirm"
-                    onClick={function () {
-                      clearFavorites();
-                      setShowConfirmClear(false);
-                    }}
-                  >
-                    Tout supprimer
-                  </button>
+                  <button className="fav-modal-cancel" onClick={function () { setShowConfirmClear(false); }}>Annuler</button>
+                  <button className="fav-modal-confirm" onClick={function () { clearFavorites(); setShowConfirmClear(false); }}>Tout supprimer</button>
                 </div>
               </div>
             </div>
@@ -413,113 +348,56 @@ export default function Favorites() {
             <div className="fav-grid">
               {filteredFavorites.map(function (formation, index) {
                 var formationId = formation._id || formation.id;
-
                 return (
-                  <div
-                    key={formationId || index}
-                    className="fav-card"
-                    style={{ animationDelay: `${index * 0.06}s` }}
-                  >
+                  <div key={formationId || index} className="fav-card" style={{ animationDelay: `${index * 0.06}s` }}>
                     <div className="fav-card-img">
+                      {/* ✅ Image uploadée ou fallback domaine */}
                       <img
-                        src={getImage(formation.domaine)}
+                        src={getFormationImage(formation)}
                         alt={formation.nom || "Formation"}
+                        onError={function (e) { e.target.src = getDefaultImage(formation.domaine); }}
                       />
                       <div className="fav-card-img-overlay"></div>
-
-                      <span
-                        className="fav-domain-badge"
-                        style={{ background: getColor(formation.domaine) }}
-                      >
+                      <span className="fav-domain-badge" style={{ background: getColor(formation.domaine) }}>
                         {formation.domaine || "Autre"}
                       </span>
-
                       <span className="fav-price-badge">
                         {formation.prix ? formation.prix + " DT" : "Gratuit"}
                       </span>
                     </div>
 
                     <div className="fav-card-body">
-                      <Link
-                        to={"/formation/" + formationId}
-                        className="fav-card-title"
-                      >
+                      <Link to={"/formation/" + formationId} className="fav-card-title">
                         {formation.nom || "Sans nom"}
                       </Link>
-
-                      <p className="fav-meta">
-                        <span>📍</span> {getVilleName(formation.ville)}
-                      </p>
+                      <p className="fav-meta"><span>📍</span> {getVilleName(formation.ville)}</p>
 
                       {formation.rating && (
                         <div style={{ marginBottom: 4 }}>
-                          {[1, 2, 3, 4, 5].map(function (star) {
+                          {[1,2,3,4,5].map(function (star) {
                             return (
-                              <span
-                                key={star}
-                                style={{
-                                  color:
-                                    star <= Math.floor(formation.rating)
-                                      ? "#facc15"
-                                      : "#e2e8f0",
-                                  fontSize: "0.72rem",
-                                }}
-                              >
-                                ★
-                              </span>
+                              <span key={star} style={{ color: star <= Math.floor(formation.rating) ? "#facc15" : "#e2e8f0", fontSize: "0.72rem" }}>★</span>
                             );
                           })}
-                          <span
-                            style={{
-                              fontSize: "0.7rem",
-                              color: "#94a3b8",
-                              marginLeft: 3,
-                            }}
-                          >
-                            {formation.rating}
-                          </span>
+                          <span style={{ fontSize: "0.7rem", color: "#94a3b8", marginLeft: 3 }}>{formation.rating}</span>
                         </div>
                       )}
 
                       {formation.formateur && (
-                        <p className="fav-meta">
-                          <span>🎓</span> {formation.formateur}
-                        </p>
+                        <p className="fav-meta"><span>🎓</span> {formation.formateur}</p>
                       )}
 
                       {formation.addedAt && (
                         <p className="fav-added">
-                          ⏱ Ajouté le{" "}
-                          {new Date(formation.addedAt).toLocaleDateString(
-                            "fr-FR",
-                            {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            }
-                          )}
+                          ⏱ Ajouté le {new Date(formation.addedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
                         </p>
                       )}
 
                       <div className="fav-card-actions">
-                        <Link
-                          to={"/formation/" + formationId}
-                          className="fav-details-btn"
-                        >
-                          <i
-                            className="fas fa-eye"
-                            style={{ fontSize: "0.7rem" }}
-                          ></i>
-                          Détails
+                        <Link to={"/formation/" + formationId} className="fav-details-btn">
+                          <i className="fas fa-eye" style={{ fontSize: "0.7rem" }}></i>Détails
                         </Link>
-
-                        <button
-                          className="fav-remove-btn"
-                          onClick={function () {
-                            removeFavorite(formationId);
-                          }}
-                          title="Retirer des favoris"
-                        >
+                        <button className="fav-remove-btn" onClick={function () { removeFavorite(formationId); }} title="Retirer des favoris">
                           <i className="fas fa-heart-broken"></i>
                         </button>
                       </div>
@@ -535,28 +413,14 @@ export default function Favorites() {
                   <>
                     <span className="fav-empty-emoji">🔍</span>
                     <h3 className="fav-empty-title">Aucun résultat</h3>
-                    <p className="fav-empty-sub">
-                      Aucune formation ne correspond à "{searchTerm}"
-                    </p>
-                    <button
-                      className="fav-reset-btn"
-                      onClick={function () {
-                        setSearchTerm("");
-                      }}
-                    >
-                      Effacer la recherche
-                    </button>
+                    <p className="fav-empty-sub">Aucune formation ne correspond à "{searchTerm}"</p>
+                    <button className="fav-reset-btn" onClick={function () { setSearchTerm(""); }}>Effacer la recherche</button>
                   </>
                 ) : (
                   <>
                     <span className="fav-empty-emoji">💔</span>
-                    <h3 className="fav-empty-title">
-                      Aucun favori pour le moment
-                    </h3>
-                    <p className="fav-empty-sub">
-                      Cliquez sur le bouton ❤️ sur une formation pour la
-                      sauvegarder ici.
-                    </p>
+                    <h3 className="fav-empty-title">Aucun favori pour le moment</h3>
+                    <p className="fav-empty-sub">Cliquez sur le bouton ❤️ sur une formation pour la sauvegarder ici.</p>
                     <Link to="/landing" className="fav-explore-btn">
                       <i className="fas fa-compass"></i>Explorer les formations
                     </Link>

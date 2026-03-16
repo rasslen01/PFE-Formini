@@ -25,36 +25,35 @@ export async function getFormationById(id) {
 // ─────────────────────────────────────────
 export async function addFormation(formationData) {
   return await axios.post(`${apiUrl}/addFormation`, {
-    name: formationData.name,
-    instructor: formationData.instructor,
-    centre: formationData.centre,
-    location: formationData.location,
-    price: formationData.price,
-    date: formationData.date,
-    time: formationData.time,
-    domain : formationData.domain,
-    centreLogo: formationData.centreLogo,
+    name:        formationData.name,
+    instructor:  formationData.instructor,
+    centre:      formationData.centre,
+    location:    formationData.location,
+    price:       formationData.price,
+    date:        formationData.date,
+    time:        formationData.time,
+    domain:      formationData.domain,
+    centreLogo:  formationData.centreLogo,
+    image:       formationData.image || "",   // ✅ AJOUTÉ
   });
 }
 
 // ─────────────────────────────────────────
-// POST - Ajouter une formation avec image
+// POST - Ajouter une formation avec image (multipart)
 // ─────────────────────────────────────────
 export async function addFormationWithImage(formationData) {
   const formData = new FormData();
-  formData.append("name", formationData.name);
+  formData.append("name",       formationData.name);
   formData.append("instructor", formationData.instructor);
-  formData.append("centre", formationData.centre);
-  formData.append("location", formationData.location);
-  formData.append("price", formationData.price);
-  formData.append("date", formationData.date);
-  formData.append("time", formationData.time);
-  formData.append("image", formationData.image);
+  formData.append("centre",     formationData.centre);
+  formData.append("location",   formationData.location);
+  formData.append("price",      formationData.price);
+  formData.append("date",       formationData.date);
+  formData.append("time",       formationData.time);
+  formData.append("image",      formationData.image);
 
   return await axios.post(`${apiUrl}/addFormationWithImage`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+    headers: { "Content-Type": "multipart/form-data" },
     withCredentials: true,
   });
 }
@@ -64,15 +63,16 @@ export async function addFormationWithImage(formationData) {
 // ─────────────────────────────────────────
 export async function updateFormation(id, formationData) {
   return await axios.put(`${apiUrl}/updateFormation/${id}`, {
-    name: formationData.name,
-    instructor: formationData.instructor,
-    centre: formationData.centre,
-    location: formationData.location,
-    price: formationData.price,
-    date: formationData.date,
-    time: formationData.time,
-    domain : formationData.domain,
-    centreLogo: formationData.centreLogo,
+    name:        formationData.name,
+    instructor:  formationData.instructor,
+    centre:      formationData.centre,
+    location:    formationData.location,
+    price:       formationData.price,
+    date:        formationData.date,
+    time:        formationData.time,
+    domain:      formationData.domain,
+    centreLogo:  formationData.centreLogo,
+    image:       formationData.image || "",   // ✅ AJOUTÉ
   });
 }
 
@@ -181,19 +181,14 @@ export async function getAcceptedFormations() {
 // PUT - Modifier le prix d'une formation
 // ─────────────────────────────────────────
 export async function updateFormationPrice(id, price) {
-  return await axios.put(`${apiUrl}/updateFormationPrice/${id}`, {
-    price,
-  });
+  return await axios.put(`${apiUrl}/updateFormationPrice/${id}`, { price });
 }
 
 // ─────────────────────────────────────────
 // PUT - Modifier la date et l'heure d'une formation
 // ─────────────────────────────────────────
 export async function updateFormationDateTime(id, date, time) {
-  return await axios.put(`${apiUrl}/updateFormationDateTime/${id}`, {
-    date,
-    time,
-  });
+  return await axios.put(`${apiUrl}/updateFormationDateTime/${id}`, { date, time });
 }
 
 // ─────────────────────────────────────────
