@@ -18,7 +18,7 @@ Une plateforme intelligente qui centralise les centres de formation et recommand
 ## 📸 Aperçu
 
 <div align="center">
-  <img src="docs/screenshots/landing-page.png" alt="Page d'accueil ForMini" width="100%">
+  <img src="C:\Users\rassl\Downloads\landing-page.png" alt="Page d'accueil ForMini" width="100%">
   <p><em>Page d'accueil de la plateforme</em></p>
 </div>
 
