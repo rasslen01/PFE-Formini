@@ -18,7 +18,7 @@ Une plateforme intelligente qui centralise les centres de formation et recommand
 ## 📸 Aperçu
 
 <div align="center">
-  <img src="C:\Users\rassl\Downloads\landing-page.png" alt="Page d'accueil ForMini" width="100%">
+  <img src="https://github.com/rasslen01/PFE-Formini/blob/master/src/assets/img/landing-page.png" alt="Page d'accueil ForMini" width="100%">
   <p><em>Page d'accueil de la plateforme</em></p>
 </div>
 
