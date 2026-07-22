@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useHistory } from "react-router-dom";
-import { loginUser } from "Services/Apiauth";
+import { loginUser, resendVerifyEmail } from "Services/Apiauth";
 import axios from "axios";
 
 export default function Login() {
@@ -8,6 +8,8 @@ export default function Login() {
   const [role, setRole] = useState("student");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [unverifiedEmail, setUnverifiedEmail] = useState(""); // email non verifie
+  const [resendStatus,    setResendStatus]    = useState("idle");
 
   const [user, setUser] = useState({
     email: "",
@@ -53,6 +55,15 @@ export default function Login() {
       const normalizedRole = (loggedUser?.role || role || "").toString().toLowerCase();
 
       console.log("✅ Login successful:", response.data);
+
+      // ✅ Nettoyer les donnees de l ancien utilisateur (evite que le profil d un autre user s affiche)
+      try {
+        const oldUser = JSON.parse(localStorage.getItem("user") || "null");
+        if (oldUser?._id && loggedUser?._id && oldUser._id !== loggedUser._id) {
+          localStorage.removeItem("profile_extra_" + oldUser._id);
+          localStorage.removeItem("studentProfile");
+        }
+      } catch (e) { /* ignore */ }
 
       // ✅ Save session
       if (token) localStorage.setItem("token", token);
@@ -109,7 +120,11 @@ export default function Login() {
             setErrors({ general: "Incorrect email or password" });
             break;
           case 403:
-            setErrors({ general: "Access denied for this role" });
+            if (error.response?.data?.needsVerification) {
+              setUnverifiedEmail(error.response.data.email || user.email);
+            } else {
+              setErrors({ general: "Access denied for this role" });
+            }
             break;
           case 404:
             setErrors({ general: "Account not found" });
@@ -123,6 +138,14 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleResendVerification = async () => {
+    setResendStatus("loading");
+    try {
+      await resendVerifyEmail(unverifiedEmail);
+      setResendStatus("success");
+    } catch { setResendStatus("error"); }
   };
 
   const handleGoogleLogin = () => {
@@ -179,6 +202,27 @@ export default function Login() {
                 <div className="text-blueGray-400 text-center mb-3 font-bold">
                   <small>Or sign in with credentials</small>
                 </div>
+
+                {unverifiedEmail ? (
+                  <div className="bg-amber-100 border border-amber-300 text-amber-800 px-4 py-4 rounded mb-4 text-sm text-center">
+                    <div className="text-2xl mb-2">📧</div>
+                    <p className="font-bold mb-1">Email non vérifié</p>
+                    <p className="text-xs mb-3">
+                      Confirmez votre email avant de vous connecter.
+                      Vérifiez votre boîte mail.
+                    </p>
+                    {resendStatus === "success" ? (
+                      <p className="text-emerald-600 font-semibold text-xs">✅ Email renvoyé !</p>
+                    ) : (
+                      <button onClick={handleResendVerification} disabled={resendStatus === "loading"}
+                        className="bg-amber-500 text-white text-xs font-bold px-4 py-2 rounded hover:bg-amber-600 transition-all">
+                        {resendStatus === "loading"
+                          ? <><i className="fas fa-spinner fa-spin mr-1" />Envoi...</>
+                          : "Renvoyer l'email de vérification"}
+                      </button>
+                    )}
+                  </div>
+                ) : null}
 
                 {errors.general && (
                   <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">

@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import StudentNavbar from "components/Navbars/StudentNavbar";
 import Footer from "components/Footers/Footer";
 import { getFormationById } from "Services/ApiFormation";
+import EvaluationSection from "components/Cards/EvaluationSection";
 
 const iconMap = {
   Competences: "⚡",
@@ -43,6 +44,8 @@ export default function FormationDetails() {
   const [formation, setFormation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageHeight, setImageHeight] = useState("auto");
 
   const normalize = (v) => (v || "").toString().trim();
 
@@ -75,19 +78,43 @@ export default function FormationDetails() {
     } catch { return ""; }
   }, [formation]);
 
-  // ✅ Nouveau — même logique que CardTableFormations
-const BACKEND_URL = "http://localhost:5000";
+  const BACKEND_URL = "http://localhost:5000";
 
-const imageUrl = useMemo(() => {
+  const imageUrl = useMemo(() => {
     const fallback = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80";
     if (!formation) return fallback;
     const img = formation.imageUrl || formation.image || "";
     if (!img || img === "default-formation.png" || img === "") return fallback;
     if (img.startsWith("http") || img.startsWith("data:")) return img;
-    // ✅ img = "/uploads/formation-xxx.webp" → ajouter seulement BACKEND_URL
     const cleanPath = img.startsWith("/") ? img : `/${img}`;
     return `${BACKEND_URL}${cleanPath}`;
-}, [formation]);
+  }, [formation]);
+
+  // ✅ Gérer le chargement de l'image et ajuster la hauteur
+  const handleImageLoad = (e) => {
+    const img = e.target;
+    const naturalHeight = img.naturalHeight;
+    const naturalWidth = img.naturalWidth;
+    const ratio = naturalHeight / naturalWidth;
+    
+    // Ajuster la hauteur selon le ratio et la taille de l'écran
+    const screenWidth = window.innerWidth;
+    let calculatedHeight;
+    
+    if (screenWidth < 640) {
+      // Mobile
+      calculatedHeight = Math.min(250, Math.max(150, 200 * ratio));
+    } else if (screenWidth < 1024) {
+      // Tablette
+      calculatedHeight = Math.min(350, Math.max(200, 280 * ratio));
+    } else {
+      // Desktop
+      calculatedHeight = Math.min(450, Math.max(250, 320 * ratio));
+    }
+    
+    setImageHeight(calculatedHeight);
+    setImageLoaded(true);
+  };
 
   const caracteristiques = {
     Competences: Array.isArray(formation?.skills) && formation.skills.length > 0 ? formation.skills.join(", ") : normalize(formation?.competences) || "React, HTML, CSS, JavaScript",
@@ -123,17 +150,18 @@ const imageUrl = useMemo(() => {
         .fd-hero-img {
           position: relative;
           overflow: hidden;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         }
         .fd-hero-img::after {
           content: '';
           position: absolute;
-          inset: 0;
-          background: linear-gradient(to top, rgba(15,23,42,0.55) 0%, transparent 50%);
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 60px;
+          background: linear-gradient(to top, rgba(0,0,0,0.1), transparent);
+          pointer-events: none;
         }
-        .fd-hero-img img {
-          transition: transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94);
-        }
-        .fd-hero-img:hover img { transform: scale(1.03); }
 
         .fd-card {
           background: #ffffff;
@@ -361,13 +389,51 @@ const imageUrl = useMemo(() => {
                 <div style={{ gridColumn: "span 8" }}>
                   <div className="fd-card" style={{ overflow: "hidden" }}>
 
-                    {/* Hero image */}
-                    <div className="fd-hero-img" style={{ height: 320 }}>
+                    {/* ✅ Hero image - Version adaptative corrigée */}
+                    <div 
+                      className="fd-hero-img" 
+                      style={{ 
+                        height: imageHeight === "auto" ? "320px" : `${imageHeight}px`,
+                        minHeight: "180px",
+                        maxHeight: "500px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "#f8fafc",
+                        transition: "height 0.3s ease"
+                      }}
+                    >
                       <img
                         src={imageUrl}
                         alt={formation.name}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        style={{ 
+                          maxWidth: "100%",
+                          maxHeight: "100%",
+                          width: "auto",
+                          height: "auto",
+                          objectFit: "contain",
+                          display: "block"
+                        }}
+                        onLoad={handleImageLoad}
+                        onError={(e) => {
+                          e.target.src = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80";
+                          setImageLoaded(true);
+                          setImageHeight(280);
+                        }}
                       />
+                      
+                      {/* Loading spinner */}
+                      {!imageLoaded && (
+                        <div style={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          transform: "translate(-50%, -50%)",
+                          color: "#94a3b8"
+                        }}>
+                          <i className="fas fa-spinner fa-spin"></i>
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ padding: "28px 32px" }}>
@@ -467,6 +533,12 @@ const imageUrl = useMemo(() => {
                 </div>
 
               </div>
+
+              {/* ── Section Évaluations ── */}
+              <div className="px-4 md:px-8 pb-12">
+                <EvaluationSection formationId={id} />
+              </div>
+
             </>
           )}
         </div>

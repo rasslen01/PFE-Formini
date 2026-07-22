@@ -6,11 +6,13 @@ import Navbar from "components/Navbars/AuthNavbar.js";
 import FooterSmall from "components/Footers/FooterSmall.js";
 
 // views
-import Login from "views/auth/Login.js";
-import Forget from "views/auth/forget";
-import Register from "views/auth/Register.js";
+import Login         from "views/auth/Login.js";
+import Forget        from "views/auth/forget";
+import Register      from "views/auth/Register.js";
 import RegisterAdmin from "views/auth/RegisterAdmin";
 import RegisterCentre from "views/auth/RegisterCentre";
+import VerifyEmail   from "views/auth/VerifyEmail";
+import ResetPassword from "views/auth/ResetPassword";
 
 export default function Auth() {
   return (
@@ -34,11 +36,13 @@ export default function Auth() {
           {/* ✅ CONTENU AUTH (OBLIGATOIRE z-10) */}
           <div className="relative z-10">
             <Switch>
-              <Route path="/auth/login" exact component={Login} />
-              <Route path="/auth/forget" exact component={Forget} />
-              <Route path="/auth/register" exact component={Register} />
-              <Route path="/auth/register-admin" exact component={RegisterAdmin} />
-              <Route path="/auth/register-centre" exact component={RegisterCentre} />
+              <Route path="/auth/login"            exact component={Login} />
+              <Route path="/auth/forget"           exact component={Forget} />
+              <Route path="/auth/register"         exact component={Register} />
+              <Route path="/auth/register-admin"   exact component={RegisterAdmin} />
+              <Route path="/auth/register-centre"  exact component={RegisterCentre} />
+              <Route path="/auth/verify-email"     exact component={VerifyEmail} />
+              <Route path="/auth/reset-password"   exact component={ResetPassword} />
               <Redirect from="/auth" to="/auth/login" />
             </Switch>
           </div>

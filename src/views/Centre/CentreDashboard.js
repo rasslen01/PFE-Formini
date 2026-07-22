@@ -161,7 +161,7 @@ export default function CentreDashboard() {
       `}</style>
 
       {/* Welcome Banner */}
-      <div className="cf-animate bg-gradient-to-r from-lightBlue-600 to-lightBlue-800 rounded-xl shadow-lg p-6 mb-8 text-white" style={{ position: "relative", overflow: "hidden" }}>
+<div className="cf-animate rounded-xl shadow-lg p-6 mb-8 text-white" style={{ position: "relative", overflow: "hidden", background: "linear-gradient(to right, #0284c7, #075985)" }}>
         <div style={{ position: "absolute", right: -20, top: -20, opacity: 0.08, fontSize: 160 }}>
           <i className="fas fa-building"></i>
         </div>

@@ -204,3 +204,13 @@ export async function getFormationsCount() {
 export async function getUpcomingFormations() {
   return await axios.get(`${apiUrl}/getUpcomingFormations`);
 }
+
+// ─────────────────────────────────────────
+// GET - Recommandations IA personnalisées
+// ─────────────────────────────────────────
+export async function getRecommendations() {
+  const token = localStorage.getItem("token");
+  return await axios.get(`${apiUrl}/getRecommendedFormations`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}

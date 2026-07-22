@@ -55,3 +55,9 @@ export const getMyProfile = (token) => {
     },
   });
 };
+export const changePassword = (userId, oldPassword, newPassword) =>
+    axios.put(
+        `${apiUrl}/change-password/${userId}`,
+        { oldPassword, newPassword },
+        authConfig()
+    );

@@ -9,8 +9,8 @@ import SallleDeFormation from "../assets/img/SallleDeFormation.avif";
 import { useFavorites } from "../FavoritesContext";
 import FavoriteButton from "../components/Button/FavoriteButton";
 import { registerFormation } from "../Services/apiInscriptions";
-import { getAllFormations } from "../Services/ApiFormation";
-
+import { getAllFormations, getRecommendations } from "../Services/ApiFormation";
+import ChatbotWidget from "../components/Chatbot/ChatbotWidget";
 const BACKEND_URL = "http://localhost:5000";
 
 export default function Landing() {
@@ -25,6 +25,13 @@ export default function Landing() {
   const [isLoadingFormations, setIsLoadingFormations] = useState(true);
   const [formationsError, setFormationsError] = useState("");
   const [registeringId, setRegisteringId] = useState("");
+
+  // ─── États recommandations IA ──────────────────────
+  const [recos,        setRecos]        = useState([]);
+  const [recoLoading,  setRecoLoading]  = useState(false);
+  const [recoError,    setRecoError]    = useState("");
+  const [needsPrefs,   setNeedsPrefs]   = useState(false);
+  const [registeringRecoId, setRegisteringRecoId] = useState("");
 
   const normalize = (v) => (v || "").toString().trim().toLowerCase();
 
@@ -54,7 +61,7 @@ export default function Landing() {
       date: f.date || "",
       centre: f.centre || "",
       centreLogo: f.centreLogo || "",
-      image: f.image || "",  // ✅ image uploadée
+      image: f.image || "",
     };
   };
 
@@ -103,20 +110,41 @@ export default function Landing() {
     }
   };
 
-  const recommandations = formations
-    .slice()
-    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-    .slice(0, 2)
-    .map((f) => ({
-      id: f.id,
-      nom: f.nom,
-      ville: f.ville,
-      domaine: f.domaine,
-      score: Math.min(99, Math.round(((f.rating || 4) / 5) * 100)),
-      description: (f.description || "").slice(0, 40) + "...",
-      prix: f.prix,
-      rating: f.rating || 4.5,
-    }));
+  // ─── Charger recommandations IA ──────────────────
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    setRecoLoading(true);
+    setRecoError("");
+    getRecommendations()
+      .then(r => setRecos(r.data?.recommendations || []))
+      .catch(e => {
+        const data = e.response?.data || {};
+        if (data.needsPreferences || data.error === "Préférences non complétées") {
+          setNeedsPrefs(true);
+        } else {
+          setRecoError(data.error || "Erreur lors du chargement des recommandations");
+        }
+      })
+      .finally(() => setRecoLoading(false));
+  }, []);
+
+  // ─── Inscription depuis les recommandations ─────────
+  const handleRecoRegister = async (formationId) => {
+    const token = localStorage.getItem("token");
+    if (!token) { alert("Connectez-vous pour vous inscrire."); return; }
+    try {
+      setRegisteringRecoId(formationId);
+      const { registerFormation } = await import("../Services/apiInscriptions");
+      await registerFormation(formationId, token);
+      alert("✅ Inscription enregistrée !");
+      history.push("/mes-inscriptions");
+    } catch (err) {
+      alert(err.response?.data?.message || "Erreur lors de l'inscription.");
+    } finally {
+      setRegisteringRecoId("");
+    }
+  };
 
   // ─── Image par domaine (fallback si pas d'image uploadée) ───
   const getDefaultImage = (domaineKey) => {
@@ -136,14 +164,12 @@ export default function Landing() {
       "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&q=80";
   };
 
-  // ─── Retourne l'image de la formation : uploadée en priorité, sinon par domaine ───
   const getFormationImage = (formation) => {
-  // ✅ Ignorer la valeur par défaut vide ou "default-formation.png"
-  if (formation.image && formation.image !== "default-formation.png") {
-    return buildImageUrl(formation.image);
-  }
-  return getDefaultImage(formation.domaine);
-};
+    if (formation.image && formation.image !== "default-formation.png") {
+      return buildImageUrl(formation.image);
+    }
+    return getDefaultImage(formation.domaine);
+  };
 
   const getColor = (domaineKey) => {
     const colors = {
@@ -214,6 +240,7 @@ export default function Landing() {
   });
 
   return (
+    // ✅ Fragment wrapper pour éviter tout conteneur avec overflow/transform
     <>
       <StudentNavbar transparent />
 
@@ -282,9 +309,9 @@ export default function Landing() {
             </div>
           </div>
 
+          {/* ✅ FIX PRINCIPAL : transform retiré du div parent et mis directement sur le SVG */}
           <div
             className="top-auto bottom-0 left-0 right-0 w-full absolute pointer-events-none overflow-hidden h-70-px"
-            style={{ transform: "translateZ(0)" }}
           >
             <svg
               className="absolute bottom-0 overflow-hidden"
@@ -292,6 +319,7 @@ export default function Landing() {
               preserveAspectRatio="none"
               version="1.1"
               viewBox="0 0 2560 100"
+              style={{ transform: "translateZ(0)" }} // ✅ mis sur le SVG directement
             >
               <polygon
                 className="text-blueGray-200 fill-current"
@@ -337,25 +365,95 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* ══════════════ RECOMMANDATIONS ══════════════ */}
+            {/* ══════════════ RECOMMANDATIONS IA ══════════════ */}
             <div className="mb-12 mt-8">
               <div className="text-center mb-8">
-                <span className="text-sm font-bold uppercase text-lightBlue-500 tracking-wider">
+                <span className="inline-flex items-center gap-2 text-sm font-bold uppercase text-lightBlue-500 tracking-wider">
+                  <i className="fas fa-robot" />
                   Intelligence Artificielle
                 </span>
                 <h3 className="text-3xl font-bold text-blueGray-800 mt-2">
                   🎯 Recommandé pour vous
                 </h3>
-                <p className="text-blueGray-500 mt-2">Basé sur votre profil et vos intérêts</p>
+                <p className="text-blueGray-500 mt-2">
+                  Formations sélectionnées par IA selon votre profil et vos préférences
+                </p>
               </div>
 
-              <div className="flex flex-wrap">
-                {recommandations.map((formation) => (
-                  <div key={formation.id} className="w-full md:w-6/12 px-4 mb-4">
-                    <RecommendationCard formation={formation} />
+              {/* Pas connecté */}
+              {!localStorage.getItem("token") && (
+                <div className="bg-lightBlue-50 border border-lightBlue-200 rounded-2xl p-8 text-center">
+                  <i className="fas fa-lock text-lightBlue-300 text-4xl mb-3" />
+                  <p className="text-blueGray-600 font-semibold mb-3">
+                    Connectez-vous pour voir vos recommandations personnalisées
+                  </p>
+                  <a href="/auth/login"
+                    className="bg-lightBlue-500 text-white font-bold px-6 py-2 rounded-lg hover:bg-lightBlue-600 transition-all inline-block">
+                    Se connecter
+                  </a>
+                </div>
+              )}
+
+              {/* Chargement */}
+              {localStorage.getItem("token") && recoLoading && (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <div className="w-12 h-12 border-4 border-lightBlue-200 border-t-lightBlue-500 rounded-full animate-spin" />
+                  <p className="text-blueGray-400 text-sm">
+                    <i className="fas fa-robot mr-2 text-lightBlue-400" />
+                    L'IA analyse votre profil...
+                  </p>
+                </div>
+              )}
+
+              {/* Préférences non complétées */}
+              {localStorage.getItem("token") && !recoLoading && needsPrefs && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center">
+                  <div className="text-5xl mb-4">🎯</div>
+                  <p className="text-blueGray-800 font-bold text-lg mb-2">
+                    Personnalisez vos recommandations IA
+                  </p>
+                  <p className="text-blueGray-500 text-sm mb-6 max-w-md mx-auto">
+                    Répondez à quelques questions sur vos objectifs, vos compétences et votre budget.
+                    L'IA sélectionnera les formations qui vous correspondent le mieux.
+                  </p>
+                  <a href="/preferences"
+                    className="bg-amber-500 text-white font-bold px-8 py-3 rounded-xl hover:bg-amber-600 transition-all inline-flex items-center gap-2 shadow-md">
+                    <i className="fas fa-magic" />
+                    Remplir mon profil
+                  </a>
+                </div>
+              )}
+
+              {/* Erreur */}
+              {recoError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center text-red-600 text-sm">
+                  <i className="fas fa-exclamation-circle mr-2" />{recoError}
+                </div>
+              )}
+
+              {/* Recommandations */}
+              {recos.length > 0 && (
+                <>
+                  <div className="flex flex-wrap -mx-3">
+                    {recos.slice(0, 4).map(formation => (
+                      <div key={formation._id} className="w-full md:w-6/12 xl:w-3/12 px-3 mb-6">
+                        <RecommendationCard
+                          formation={formation}
+                          onRegister={handleRecoRegister}
+                          isRegistering={registeringRecoId === formation._id}
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                  <div className="text-center mt-2">
+                    <p className="text-xs text-blueGray-400 flex items-center justify-center gap-2">
+                      <i className="fas fa-robot text-lightBlue-400" />
+                      Recommandations générées par Claude AI · Anthropic
+                      <i className="fas fa-robot text-lightBlue-400" />
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* ══════════════ FILTRES ══════════════ */}
@@ -533,9 +631,8 @@ export default function Landing() {
                             <img
                               alt={formation.nom}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                              src={getFormationImage(formation)}  
+                              src={getFormationImage(formation)}
                               onError={(e) => {
-                                // Si l'image uploadée échoue, fallback par domaine
                                 e.target.src = getDefaultImage(formation.domaine);
                               }}
                             />
@@ -617,7 +714,6 @@ export default function Landing() {
                               }}
                             >
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                {/* Badges info */}
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "8px" }}>
                                   <span style={{ fontSize: "11px", color: "#64748b", backgroundColor: "#f1f5f9", padding: "3px 8px", borderRadius: "20px" }}>
                                     📍 {getVilleName(formation.ville)}
@@ -634,7 +730,6 @@ export default function Landing() {
                                   ) : null}
                                 </div>
 
-                                {/* Étoiles */}
                                 {formation.rating && (
                                   <div style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
                                     {[1, 2, 3, 4, 5].map((star) => (
@@ -652,18 +747,16 @@ export default function Landing() {
                                   </div>
                                 )}
 
-                                {/* Formateur / Centre */}
                                 <div style={{ fontSize: "11px", color: "#94a3b8", display: "flex", alignItems: "center", gap: "6px" }}>
                                   <span>🎓 {formation.formateur || formation.centre || "Centre"}</span>
                                 </div>
                               </div>
 
-                              {/* ✅ Logo du centre */}
                               <div style={{ flexShrink: 0 }}>
                                 <img
                                   src={formation.centreLogo || "https://via.placeholder.com/52?text=C"}
                                   alt={formation.centre || "Centre"}
-                                  onError={(e) => { e.target.src = "https://via.placeholder.com/52?text=C"; }}
+                                  onError={(e) => { e.target.src = ""; }}
                                   style={{
                                     width: "52px", height: "52px",
                                     borderRadius: "9999px", objectFit: "cover",
@@ -856,7 +949,7 @@ export default function Landing() {
           </div>
         </section>
       </main>
-
+     <ChatbotWidget />
       <Footer />
 
       <style>{`

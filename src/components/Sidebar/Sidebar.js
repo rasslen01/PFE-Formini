@@ -216,6 +216,28 @@ export default function Sidebar() {
                   Gestion des Badge
                 </Link>
               </li>
+              <hr className="my-4 md:min-w-full" />
+              <li className="items-center">
+  <Link
+    className={
+      "text-xs uppercase py-3 font-bold block " +
+      (window.location.href.indexOf("/admin/evaluations") !== -1
+        ? "text-lightBlue-500 hover:text-lightBlue-600"
+        : "text-blueGray-700 hover:text-blueGray-500")
+    }
+    to="/admin/evaluations"
+  >
+    <i
+      className={
+        "fas fa-star mr-2 text-sm " +
+        (window.location.href.indexOf("/admin/evaluations") !== -1
+          ? "opacity-75"
+          : "text-blueGray-300")
+      }
+    ></i>{" "}
+    Évaluations
+  </Link>
+</li>
                <hr className="my-4 md:min-w-full" />
               <li className="items-center">
                 <Link

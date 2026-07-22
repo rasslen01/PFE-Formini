@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import StudentNavbar from "components/Navbars/StudentNavbar";
+import ChatbotWidget from "components/Chatbot/ChatbotWidget";
 import Footer from "components/Footers/Footer";
 import TextType from "../views/TextType";
 import {
@@ -286,6 +287,7 @@ export default function MesInscriptions() {
       </section>
 
       <Footer />
+      <ChatbotWidget />
     </>
   );
 }

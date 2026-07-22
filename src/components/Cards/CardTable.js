@@ -1,73 +1,37 @@
 // ═══════════════════════════════════════════════
-// 📁 src/components/Cards/CardTable.js
-// Gestion des utilisateurs (API + fallback local si backend down)
+// src/components/Cards/CardTable.js
+// Gestion des utilisateurs — données 100% depuis l'API
 // ═══════════════════════════════════════════════
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import {
   getAllUsers,
-  addUser as addUserApi,
+  addUser    as addUserApi,
   updateUser as updateUserApi,
   deleteUser as deleteUserApi,
 } from "Services/ApiUser";
 
-// ✅ IMPORTANT: fake data خارج component باش ما يعاودش يتبدّل كل render
-const FAKE_USERS = [
-  { _id: "1", name: "Ali Ben Ahmed", email: "ali@test.com", role: "ADMIN", xp: 120, isActive: true },
-  { _id: "2", name: "Sara Mansouri", email: "sara@test.com", role: "STUDENT", xp: 50, isActive: false },
-  { _id: "3", name: "Mohamed Karim", email: "mohamed@test.com", role: "CENTRE", xp: 80, isActive: true },
-  { _id: "4", name: "Fatima Zahra", email: "fatima@test.com", role: "STUDENT", xp: 30, isActive: false },
-  { _id: "5", name: "Youssef Alami", email: "youssef@test.com", role: "ADMIN", xp: 200, isActive: true },
-];
-
 export default function CardTable({ color }) {
-  const [users, setUsers] = useState([]);
-  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [users,        setUsers]        = useState([]);
+  const [roleFilter,   setRoleFilter]   = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [useLocalMode, setUseLocalMode] = useState(false);
+  const [searchQuery,  setSearchQuery]  = useState("");
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState("");
 
-  // Modal
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("add");
-  const [formUser, setFormUser] = useState({
-    _id: "",
-    name: "",
-    email: "",
-    role: "STUDENT",
-    xp: 0,
-    isActive: true,
-    password: "",
+  const [formUser,  setFormUser]  = useState({
+    _id: "", name: "", email: "", role: "STUDENT",
+    xp: 0, isActive: true, password: "",
   });
 
-  // ─────────────────────────────────────────
-  // Helpers local
-  // ─────────────────────────────────────────
-  const saveToLocal = useCallback((updatedUsers) => {
-    setUsers(updatedUsers);
-    localStorage.setItem("localUsers", JSON.stringify(updatedUsers));
-  }, []);
-
-  const loadFromLocal = useCallback(() => {
-    const saved = localStorage.getItem("localUsers");
-    if (saved) return JSON.parse(saved);
-    localStorage.setItem("localUsers", JSON.stringify(FAKE_USERS));
-    return FAKE_USERS;
-  }, []);
-
-  // ─────────────────────────────────────────
-  // Fetch users
-  // ─────────────────────────────────────────
+  // ─── Charger les users depuis l'API ─────────
   const fetchUsers = useCallback(async () => {
     const token = localStorage.getItem("token");
-
-    // ✅ إذا ما ثماش token => موش backend down => لازم login
     if (!token) {
       setError("Vous devez vous connecter (token manquant).");
-      setUseLocalMode(false);
       setUsers([]);
       return;
     }
@@ -77,279 +41,172 @@ export default function CardTable({ color }) {
 
     try {
       const res = await getAllUsers();
-
-      // Debug utile
-      // console.log("✅ getAllUsers response:", res.data);
-
-      setUsers(res.data.usersList || []);
-      setUseLocalMode(false);
+      // Le backend retourne { usersList: [...] }
+      setUsers(res.data?.usersList || res.data || []);
     } catch (err) {
       const status = err?.response?.status;
-      const data = err?.response?.data;
+      const msg    = err?.response?.data?.error;
 
-      console.log("❌ API ERROR getAllUsers:", status, data);
+      if (status === 401) { setError("Session expirée. Reconnectez-vous."); }
+      else if (status === 403) { setError("Accès refusé (ADMIN uniquement)."); }
+      else { setError(msg || "Erreur lors du chargement des utilisateurs."); }
 
-      // ✅ Auth/Role errors => لا تروحش local mode
-      if (status === 401) {
-        setError("Session expirée. Veuillez vous reconnecter.");
-        setUseLocalMode(false);
-        setUsers([]);
-        return;
-      }
-
-      if (status === 403) {
-        setError("Accès refusé (ADMIN uniquement). Connectez-vous en ADMIN.");
-        setUseLocalMode(false);
-        setUsers([]);
-        return;
-      }
-
-      // بعض middleware يرجّع 400 token invalid
-      if (status === 400 && (data?.error || "").toLowerCase().includes("token")) {
-        setError("Token invalide. Veuillez vous reconnecter.");
-        setUseLocalMode(false);
-        setUsers([]);
-        return;
-      }
-
-      // ✅ هنا فقط: backend down / network error (no response)
-      if (!err.response) {
-        console.warn("⚠️ Backend down, fallback local.");
-        setUseLocalMode(true);
-        setUsers(loadFromLocal());
-        return;
-      }
-
-      // أي error آخر: لا نعتبره backend down مباشرة، نعطي message
-      setError(data?.error || "Erreur serveur lors du chargement des utilisateurs.");
-      setUseLocalMode(false);
       setUsers([]);
     } finally {
       setLoading(false);
     }
-  }, [loadFromLocal]);
+  }, []);
 
-  // ✅ call once on mount (correct deps)
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  // ─────────────────────────────────────────
-  // Modals
-  // ─────────────────────────────────────────
+  // ─── Ouvrir modal ───────────────────────────
   const openAddModal = () => {
     setModalType("add");
-    setFormUser({
-      _id: "",
-      name: "",
-      email: "",
-      role: "STUDENT",
-      xp: 0,
-      isActive: true,
-      password: "",
-    });
+    setFormUser({ _id: "", name: "", email: "", role: "STUDENT", xp: 0, isActive: true, password: "" });
     setShowModal(true);
   };
 
   const openEditModal = (user) => {
     setModalType("edit");
-    setFormUser({ ...user, password: "" }); // password pas modifié ici
+    setFormUser({ ...user, password: "" });
     setShowModal(true);
   };
 
-  // ─────────────────────────────────────────
-  // Save
-  // ─────────────────────────────────────────
+  // ─── Sauvegarder (add ou edit) ──────────────
   const handleSave = async () => {
+    if (!formUser.name?.trim())  { setError("Le nom est obligatoire.");   return; }
+    if (!formUser.email?.trim()) { setError("L'email est obligatoire.");  return; }
+    if (modalType === "add" && !formUser.password) {
+      setError("Le mot de passe est obligatoire."); return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      if (useLocalMode) {
-        // MODE LOCAL
-        if (modalType === "add") {
-          const newUser = { ...formUser, _id: Date.now().toString() };
-          saveToLocal([...users, newUser]);
-        } else {
-          const updatedUsers = users.map((u) => (u._id === formUser._id ? formUser : u));
-          saveToLocal(updatedUsers);
-        }
+      if (modalType === "add") {
+        const res = await addUserApi(formUser);
+        // Le backend retourne { message, user: {...} }
+        const newUser = res.data?.user || res.data;
+        setUsers((prev) => [...prev, newUser]);
       } else {
-        // MODE API
-        if (modalType === "add") {
-          const res = await addUserApi(formUser);
-          setUsers((prev) => [...prev, res.data.user]);
-        } else {
-          const res = await updateUserApi(formUser._id, formUser);
-          setUsers((prev) => prev.map((u) => (u._id === formUser._id ? res.data.user : u)));
-        }
+        const res = await updateUserApi(formUser._id, formUser);
+        const updated = res.data?.user || res.data;
+        setUsers((prev) => prev.map((u) => u._id === formUser._id ? updated : u));
       }
-
       setShowModal(false);
     } catch (err) {
-      console.error("Save error:", err?.response?.status, err?.response?.data);
-      setError(err?.response?.data?.error || "Erreur lors de la sauvegarde");
+      setError(err?.response?.data?.error || "Erreur lors de la sauvegarde.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ─────────────────────────────────────────
-  // Delete
-  // ─────────────────────────────────────────
+  // ─── Supprimer ──────────────────────────────
   const handleDelete = async (id) => {
     if (!window.confirm("Supprimer cet utilisateur ?")) return;
-
     setLoading(true);
     setError("");
-
     try {
-      if (useLocalMode) {
-        saveToLocal(users.filter((u) => u._id !== id));
-      } else {
-        await deleteUserApi(id);
-        await fetchUsers(); // refresh from backend
-      }
+      await deleteUserApi(id);
+      setUsers((prev) => prev.filter((u) => u._id !== id));
     } catch (err) {
-      console.error("Delete error:", err?.response?.status, err?.response?.data);
-      setError(err?.response?.data?.error || "Erreur lors de la suppression");
+      setError(err?.response?.data?.error || "Erreur lors de la suppression.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ─────────────────────────────────────────
-  // Filters (safe)
-  // ─────────────────────────────────────────
+  // ─── Filtres ────────────────────────────────
   const filteredUsers = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return (users || []).filter((u) => {
-      const name = (u.name || "").toLowerCase();
-      const matchesSearch = name.includes(q);
-
-      const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
-
-      const isActive = u.isActive === true; // safe
-      const matchesStatus =
-        statusFilter === "ALL" ||
-        (statusFilter === "ACTIVE" && isActive) ||
-        (statusFilter === "SUSPENDED" && !isActive);
-
-      return matchesSearch && matchesRole && matchesStatus;
+      const matchSearch = (u.name || "").toLowerCase().includes(q) ||
+                          (u.email || "").toLowerCase().includes(q);
+      const matchRole   = roleFilter   === "ALL" || u.role === roleFilter;
+      const matchStatus = statusFilter === "ALL" ||
+        (statusFilter === "ACTIVE"    &&  u.isActive) ||
+        (statusFilter === "SUSPENDED" && !u.isActive);
+      return matchSearch && matchRole && matchStatus;
     });
   }, [users, searchQuery, roleFilter, statusFilter]);
 
-  const resetFilters = () => {
-    setSearchQuery("");
-    setRoleFilter("ALL");
-    setStatusFilter("ALL");
-  };
+  const hasFilters = searchQuery || roleFilter !== "ALL" || statusFilter !== "ALL";
 
-  const hasActiveFilters = searchQuery !== "" || roleFilter !== "ALL" || statusFilter !== "ALL";
-
-  // ─────────────────────────────────────────
-  // UI
-  // ─────────────────────────────────────────
   return (
     <>
-      <div
-        className={
-          "relative flex flex-col w-full mb-6 shadow-lg rounded " +
-          (color === "light" ? "bg-white" : "bg-lightBlue-900 text-white")
-        }
-      >
-        {/* Mode Indicator */}
-        {useLocalMode && (
-          <div className="bg-amber-100 border-b border-amber-200 text-amber-700 px-4 py-2 text-xs flex items-center justify-between">
-            <span>
-              <i className="fas fa-exclamation-triangle mr-2"></i>
-              Mode local activé (backend indisponible). Données sauvegardées dans le navigateur.
-            </span>
-            <button onClick={fetchUsers} className="text-amber-700 hover:text-amber-900 font-bold">
-              <i className="fas fa-sync-alt mr-1"></i>
-              Réessayer
-            </button>
-          </div>
-        )}
+      <div className={"relative flex flex-col w-full mb-6 shadow-lg rounded " +
+        (color === "light" ? "bg-white" : "bg-lightBlue-900 text-white")}>
 
-        {/* Error Message */}
+        {/* Erreur */}
         {error && (
           <div className="bg-red-100 border-b border-red-200 text-red-700 px-4 py-2 text-xs flex justify-between items-center">
-            <span>
-              <i className="fas fa-exclamation-circle mr-2"></i>
-              {error}
-            </span>
-            <button onClick={() => setError("")} className="text-red-500 hover:text-red-700">
-              <i className="fas fa-times"></i>
-            </button>
+            <span><i className="fas fa-exclamation-circle mr-2" />{error}</span>
+            <button onClick={() => setError("")}><i className="fas fa-times" /></button>
           </div>
         )}
 
         {/* Header */}
         <div className="px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-          <h3 className="font-semibold text-lg">
-            Gestion des utilisateurs
-            {useLocalMode && <span className="ml-2 text-xs font-normal text-amber-500">(local)</span>}
-          </h3>
-
+          <h3 className="font-semibold text-lg">Gestion des utilisateurs</h3>
           <div className="flex flex-wrap gap-2 items-center">
+
+            {/* Recherche */}
             <div className="relative">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blueGray-400">
-                <i className="fas fa-search"></i>
+                <i className="fas fa-search" />
               </span>
               <input
                 type="text"
-                placeholder="Rechercher par nom..."
+                placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="border rounded px-3 py-2 pl-9 w-64 text-sm focus:outline-none focus:ring-2 focus:ring-lightBlue-500 transition-all"
+                className="border rounded px-3 py-2 pl-9 w-56 text-sm focus:outline-none focus:ring-2 focus:ring-lightBlue-500"
               />
               {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-blueGray-400 hover:text-red-500"
-                >
-                  <i className="fas fa-times"></i>
+                <button onClick={() => setSearchQuery("")}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-blueGray-400 hover:text-red-500">
+                  <i className="fas fa-times" />
                 </button>
               )}
             </div>
 
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="border px-3 py-2 rounded text-sm"
-            >
+            {/* Filtre rôle */}
+            <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
+              className="border px-3 py-2 rounded text-sm">
               <option value="ALL">Tous les rôles</option>
               <option value="ADMIN">Admin</option>
               <option value="CENTRE">Centre</option>
               <option value="STUDENT">Student</option>
             </select>
 
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border px-3 py-2 rounded text-sm"
-            >
+            {/* Filtre statut */}
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+              className="border px-3 py-2 rounded text-sm">
               <option value="ALL">Tous les statuts</option>
               <option value="ACTIVE">✅ Actif</option>
               <option value="SUSPENDED">🔴 Suspendu</option>
             </select>
 
-            {hasActiveFilters && (
-              <button
-                onClick={resetFilters}
-                className="bg-blueGray-200 text-blueGray-700 px-3 py-2 rounded text-sm hover:bg-blueGray-300"
-              >
-                <i className="fas fa-undo mr-1"></i>
-                Réinitialiser
+            {/* Reset filtres */}
+            {hasFilters && (
+              <button onClick={() => { setSearchQuery(""); setRoleFilter("ALL"); setStatusFilter("ALL"); }}
+                className="bg-blueGray-200 text-blueGray-700 px-3 py-2 rounded text-sm hover:bg-blueGray-300">
+                <i className="fas fa-undo mr-1" /> Reset
               </button>
             )}
 
-            <button
-              onClick={openAddModal}
-              className="bg-emerald-500 text-white px-4 py-2 rounded text-sm font-bold hover:bg-emerald-600"
-            >
-              + Ajouter
+            {/* Refresh */}
+            <button onClick={fetchUsers}
+              className="bg-blueGray-100 text-blueGray-600 px-3 py-2 rounded text-sm hover:bg-blueGray-200"
+              title="Rafraîchir">
+              <i className="fas fa-sync-alt" />
+            </button>
+
+            {/* Ajouter */}
+            <button onClick={openAddModal}
+              className="bg-emerald-500 text-white px-4 py-2 rounded text-sm font-bold hover:bg-emerald-600">
+              <i className="fas fa-plus mr-1" /> Ajouter
             </button>
           </div>
         </div>
@@ -357,21 +214,17 @@ export default function CardTable({ color }) {
         {/* Loading */}
         {loading && (
           <div className="px-4 py-2 text-center text-lightBlue-500 text-sm">
-            <i className="fas fa-spinner fa-spin mr-2"></i>
-            Chargement...
+            <i className="fas fa-spinner fa-spin mr-2" /> Chargement...
           </div>
         )}
 
-        {/* Table */}
+        {/* Tableau */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                {["Nom", "Email", "Rôle", "XP", "Status", "Actions"].map((h, i) => (
-                  <th
-                    key={i}
-                    className="px-6 py-3 text-left bg-blueGray-50 text-blueGray-500 text-xs uppercase"
-                  >
+                {["Nom", "Email", "Rôle", "XP", "Statut", "Actions"].map((h) => (
+                  <th key={h} className="px-6 py-3 text-left bg-blueGray-50 text-blueGray-500 text-xs uppercase">
                     {h}
                   </th>
                 ))}
@@ -380,57 +233,57 @@ export default function CardTable({ color }) {
             <tbody>
               {filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => (
-                  <tr key={user._id} className="hover:bg-gray-100 border-b">
-                    <td className="px-6 py-4">{user.name}</td>
-                    <td className="px-6 py-4">{user.email}</td>
+                  <tr key={user._id} className="hover:bg-gray-50 border-b">
                     <td className="px-6 py-4">
-                      <span
-                        className={`text-xs font-bold px-2 py-1 rounded-full ${
-                          user.role === "ADMIN"
-                            ? "bg-orange-100 text-orange-700"
-                            : user.role === "CENTRE"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-lightBlue-100 text-lightBlue-700"
-                        }`}
-                      >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-lightBlue-100 flex items-center justify-center font-bold text-lightBlue-700 text-sm flex-shrink-0">
+                          {(user.name || "?").charAt(0).toUpperCase()}
+                        </div>
+                        <span className="font-semibold text-blueGray-700">{user.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-blueGray-500 text-sm">{user.email}</td>
+                    <td className="px-6 py-4">
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                        user.role === "ADMIN"   ? "bg-orange-100 text-orange-700"  :
+                        user.role === "CENTRE"  ? "bg-purple-100 text-purple-700"  :
+                                                  "bg-lightBlue-100 text-lightBlue-700"}`}>
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4">{user.xp}</td>
                     <td className="px-6 py-4">
-                      {user.isActive ? (
-                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
-                          ✅ Actif
-                        </span>
-                      ) : (
-                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-red-100 text-red-700">
-                          🔴 Suspendu
-                        </span>
-                      )}
+                      <span className="font-bold text-amber-500">{user.xp || 0}</span>
+                      <span className="text-xs text-blueGray-400 ml-1">XP</span>
                     </td>
-                    <td className="px-6 py-4 flex gap-2">
-                      <button
-                        onClick={() => openEditModal(user)}
-                        disabled={loading}
-                        className="bg-lightBlue-500 text-white font-bold uppercase text-sm px-4 py-2 rounded shadow hover:shadow-lg transition-all"
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user._id)}
-                        disabled={loading}
-                        className="bg-red-500 text-white font-bold uppercase text-sm px-4 py-2 rounded shadow hover:shadow-lg transition-all"
-                      >
-                        Supprimer
-                      </button>
+                    <td className="px-6 py-4">
+                      {user.isActive
+                        ? <span className="text-xs font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">✅ Actif</span>
+                        : <span className="text-xs font-bold px-2 py-1 rounded-full bg-red-100 text-red-700">🔴 Suspendu</span>
+                      }
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <button onClick={() => openEditModal(user)} disabled={loading}
+                          className="bg-lightBlue-500 text-white font-bold text-xs px-3 py-2 rounded shadow hover:shadow-md transition-all">
+                          <i className="fas fa-edit mr-1" /> Modifier
+                        </button>
+                        <button onClick={() => handleDelete(user._id)} disabled={loading}
+                          className="bg-red-500 text-white font-bold text-xs px-3 py-2 rounded shadow hover:shadow-md transition-all">
+                          <i className="fas fa-trash mr-1" /> Supprimer
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-blueGray-400">
-                    <i className="fas fa-user-slash text-2xl mb-2 block"></i>
-                    Aucun utilisateur trouvé
+                  <td colSpan="6" className="px-6 py-10 text-center text-blueGray-400">
+                    {loading ? "" : (
+                      <>
+                        <i className="fas fa-users text-3xl mb-3 block opacity-30" />
+                        {error ? "Vérifiez votre connexion." : "Aucun utilisateur trouvé."}
+                      </>
+                    )}
                   </td>
                 </tr>
               )}
@@ -439,103 +292,93 @@ export default function CardTable({ color }) {
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2 text-sm text-blueGray-400 border-t flex justify-between items-center">
-          <span>
-            {filteredUsers.length} résultat(s) sur {users.length} utilisateur(s)
-          </span>
-          <span className="text-xs">
-            <i className={`fas fa-circle mr-1 ${useLocalMode ? "text-amber-500" : "text-emerald-500"}`}></i>
-            {useLocalMode ? "Local" : "API"}
-          </span>
+        <div className="px-4 py-2 text-sm text-blueGray-400 border-t">
+          {filteredUsers.length} résultat(s) sur {users.length} utilisateur(s)
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal Ajouter / Modifier */}
       {showModal && (
         <>
-          <div className="modal-backdrop"></div>
+          <div className="modal-backdrop" />
           <div className="modal-container">
-            <h3 className="text-xl font-semibold mb-4">
-              {modalType === "add" ? "Ajouter utilisateur" : "Modifier utilisateur"}
-            </h3>
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-xl font-semibold">
+                {modalType === "add" ? "➕ Ajouter un utilisateur" : "✏️ Modifier l'utilisateur"}
+              </h3>
+              <button onClick={() => setShowModal(false)} className="text-blueGray-400 hover:text-red-500">
+                <i className="fas fa-times text-xl" />
+              </button>
+            </div>
+
+            {error && (
+              <div className="bg-red-100 text-red-700 text-sm px-3 py-2 rounded mb-4">
+                {error}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Nom"
-                value={formUser.name}
-                onChange={(e) => setFormUser({ ...formUser, name: e.target.value })}
-                className="border rounded px-3 py-2 w-full md:col-span-2"
-              />
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-blueGray-600 uppercase mb-1">Nom complet *</label>
+                <input type="text" placeholder="Nom complet" value={formUser.name}
+                  onChange={(e) => setFormUser({ ...formUser, name: e.target.value })}
+                  className="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-lightBlue-400" />
+              </div>
 
-              <input
-                type="email"
-                placeholder="Email"
-                value={formUser.email}
-                onChange={(e) => setFormUser({ ...formUser, email: e.target.value })}
-                className="border rounded px-3 py-2 w-full md:col-span-2"
-              />
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-blueGray-600 uppercase mb-1">Email *</label>
+                <input type="email" placeholder="Email" value={formUser.email}
+                  onChange={(e) => setFormUser({ ...formUser, email: e.target.value })}
+                  className="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-lightBlue-400" />
+              </div>
 
-              <select
-                value={formUser.role}
-                onChange={(e) => setFormUser({ ...formUser, role: e.target.value })}
-                className="border rounded px-3 py-2 w-full"
-              >
-                <option value="ADMIN">Admin</option>
-                <option value="CENTRE">Centre</option>
-                <option value="STUDENT">Student</option>
-              </select>
+              <div>
+                <label className="block text-xs font-bold text-blueGray-600 uppercase mb-1">Rôle</label>
+                <select value={formUser.role}
+                  onChange={(e) => setFormUser({ ...formUser, role: e.target.value })}
+                  className="border rounded px-3 py-2 w-full text-sm">
+                  <option value="STUDENT">Student</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="CENTRE">Centre</option>
+                </select>
+              </div>
 
-              <input
-                type="number"
-                placeholder="XP"
-                value={formUser.xp}
-                onChange={(e) => setFormUser({ ...formUser, xp: Number(e.target.value) })}
-                min="0"
-                className="border rounded px-3 py-2 w-full"
-              />
+              <div>
+                <label className="block text-xs font-bold text-blueGray-600 uppercase mb-1">XP</label>
+                <input type="number" placeholder="XP" value={formUser.xp} min="0"
+                  onChange={(e) => setFormUser({ ...formUser, xp: Number(e.target.value) })}
+                  className="border rounded px-3 py-2 w-full text-sm" />
+              </div>
 
-              <select
-                value={formUser.isActive ? "true" : "false"}
-                onChange={(e) => setFormUser({ ...formUser, isActive: e.target.value === "true" })}
-                className="border rounded px-3 py-2 w-full md:col-span-2"
-              >
-                <option value="true">✅ Actif</option>
-                <option value="false">🔴 Suspendu</option>
-              </select>
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-blueGray-600 uppercase mb-1">Statut</label>
+                <select value={formUser.isActive ? "true" : "false"}
+                  onChange={(e) => setFormUser({ ...formUser, isActive: e.target.value === "true" })}
+                  className="border rounded px-3 py-2 w-full text-sm">
+                  <option value="true">✅ Actif</option>
+                  <option value="false">🔴 Suspendu</option>
+                </select>
+              </div>
 
               {modalType === "add" && (
-                <input
-                  type="password"
-                  placeholder="Mot de passe"
-                  value={formUser.password || ""}
-                  onChange={(e) => setFormUser({ ...formUser, password: e.target.value })}
-                  className="border rounded px-3 py-2 w-full md:col-span-2"
-                />
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-blueGray-600 uppercase mb-1">Mot de passe *</label>
+                  <input type="password" placeholder="Mot de passe (min. 6 caractères)"
+                    value={formUser.password || ""}
+                    onChange={(e) => setFormUser({ ...formUser, password: e.target.value })}
+                    className="border rounded px-3 py-2 w-full text-sm" />
+                </div>
               )}
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowModal(false)}
-                disabled={loading}
-                className="bg-red-500 text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all"
-              >
+              <button onClick={() => setShowModal(false)} disabled={loading}
+                className="bg-blueGray-200 text-blueGray-700 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all">
                 Annuler
               </button>
-
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="bg-emerald-500 text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all"
-              >
-                {loading ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i>Saving...
-                  </>
-                ) : (
-                  "Enregistrer"
-                )}
+              <button onClick={handleSave} disabled={loading}
+                className="bg-emerald-500 text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg transition-all">
+                {loading ? <><i className="fas fa-spinner fa-spin mr-2" />Saving...</> : "Enregistrer"}
               </button>
             </div>
           </div>
@@ -546,4 +389,4 @@ export default function CardTable({ color }) {
 }
 
 CardTable.defaultProps = { color: "light" };
-CardTable.propTypes = { color: PropTypes.oneOf(["light", "dark"]) };
+CardTable.propTypes    = { color: PropTypes.oneOf(["light", "dark"]) };

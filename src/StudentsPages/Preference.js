@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════
-// 📁 src/views/Preferences.js
+// 📁 src/views/Preferences.js - VERSION CORRIGÉE
 // ═══════════════════════════════════════════════
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -10,7 +10,6 @@ import axios from "axios";
 export default function Preferences() {
   const history = useHistory();
 
-  // Prevent state updates after unmount (fix memory leak warning)
   const isMountedRef = useRef(true);
   useEffect(() => {
     return () => {
@@ -22,6 +21,7 @@ export default function Preferences() {
   const [userName, setUserName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState(false); // ✅ AJOUTÉ
 
   const [formData, setFormData] = useState({
     domaine: "",
@@ -41,9 +41,6 @@ export default function Preferences() {
     disponibilite: [],
   });
 
-  // ─────────────────────────────────────────────
-  // Steps UI
-  // ─────────────────────────────────────────────
   const steps = [
     { title: "Welcome", subtitle: "Start your personalization" },
     { title: "Profile & Skills", subtitle: "Your background and interests" },
@@ -55,9 +52,6 @@ export default function Preferences() {
     (currentStep / (steps.length - 1)) * 100
   );
 
-  // ─────────────────────────────────────────────
-  // Options (comme ton ancien fichier)
-  // ─────────────────────────────────────────────
   const domainesOptions = [
     "Développement Web",
     "Data Science",
@@ -113,9 +107,6 @@ export default function Preferences() {
     "Dimanche",
   ];
 
-  // ─────────────────────────────────────────────
-  // Handlers
-  // ─────────────────────────────────────────────
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -133,9 +124,6 @@ export default function Preferences() {
   const nextStep = () => setCurrentStep((s) => Math.min(3, s + 1));
   const prevStep = () => setCurrentStep((s) => Math.max(0, s - 1));
 
-  // ─────────────────────────────────────────────
-  // Load user + preferences from backend
-  // ─────────────────────────────────────────────
   const loadPreferences = useCallback(async () => {
     const userRaw = localStorage.getItem("user");
     const user = userRaw ? JSON.parse(userRaw) : null;
@@ -150,7 +138,6 @@ export default function Preferences() {
       setUserName(user.name || "");
     }
 
-    // Load local draft first (if any)
     const draft = localStorage.getItem("preferencesDraft");
     if (draft) {
       try {
@@ -170,15 +157,11 @@ export default function Preferences() {
 
       if (!isMountedRef.current) return;
 
-      // backend renvoie { preferences: {...} }
-      if (res.data?.preferences) {
+      if (res.data?.preferences && Object.keys(res.data.preferences).length > 0) {
         setFormData(res.data.preferences);
       }
     } catch (err) {
-      console.log(
-        "No previous preferences found",
-        err?.response?.data || err.message
-      );
+      console.log("No previous preferences found");
     }
   }, [history]);
 
@@ -186,21 +169,23 @@ export default function Preferences() {
     loadPreferences();
   }, [loadPreferences]);
 
-  // ─────────────────────────────────────────────
-  // Auto-save local draft (optionnel)
-  // ─────────────────────────────────────────────
   useEffect(() => {
     localStorage.setItem("preferencesDraft", JSON.stringify(formData));
   }, [formData]);
 
-  // ─────────────────────────────────────────────
-  // SUBMIT
-  // ─────────────────────────────────────────────
+  // ✅ SUBMIT CORRIGÉ - Ne supprime PAS le token
   const handleSubmit = async () => {
+    // Validation: domaine obligatoire
+    if (!formData.domaine) {
+      setSubmitError("Veuillez sélectionner un domaine");
+      return;
+    }
+
     try {
       if (isMountedRef.current) {
         setIsSubmitting(true);
         setSubmitError("");
+        setSubmitSuccess(false);
       }
 
       const token = localStorage.getItem("token");
@@ -213,19 +198,26 @@ export default function Preferences() {
         return;
       }
 
+      // Sauvegarde des préférences
       await axios.put("http://localhost:5000/users/preferences", formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Nettoyer session pour forcer login (comme tu veux)
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      // ✅ NE SUPPRIME PAS token et user - juste le draft
       localStorage.removeItem("preferencesDraft");
-
-      alert("✅ Preferences saved successfully!");
-      history.push("/auth/login");
+      
+      if (isMountedRef.current) {
+        setSubmitSuccess(true);
+        
+        // ✅ Redirection vers les recommandations après 1.5 secondes
+        setTimeout(() => {
+          history.push("/recommendations");
+        }, 1500);
+      }
+      
     } catch (error) {
       if (!isMountedRef.current) return;
+      console.error("Erreur sauvegarde:", error);
       setSubmitError(error.response?.data?.error || "Error saving preferences");
     } finally {
       if (!isMountedRef.current) return;
@@ -234,25 +226,17 @@ export default function Preferences() {
   };
 
   const handleSkip = () => {
-    if (window.confirm("Skip preferences?")) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("preferencesDraft");
-      history.push("/auth/login");
+    if (window.confirm("Skip preferences? You can update them later.")) {
+      // ✅ Skip juste redirige vers dashboard, pas logout
+      history.push("/dashboard");
     }
   };
 
-  // ─────────────────────────────────────────────
-  // Small UI helper classes
-  // ─────────────────────────────────────────────
   const inputClass =
     "border border-blueGray-200 px-4 py-2 w-full rounded-xl focus:outline-none focus:ring-2 focus:ring-lightBlue-300";
   const selectClass =
     "border border-blueGray-200 px-4 py-2 w-full rounded-xl focus:outline-none focus:ring-2 focus:ring-lightBlue-300 bg-white";
 
-  // ─────────────────────────────────────────────
-  // UI
-  // ─────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-blueGray-100 py-10 px-4">
       <div className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-blueGray-100">
@@ -279,7 +263,6 @@ export default function Preferences() {
             </div>
           </div>
 
-          {/* Progress bar */}
           <div className="mt-4 h-2 w-full bg-blueGray-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-lightBlue-500 rounded-full transition-all duration-300"
@@ -287,7 +270,6 @@ export default function Preferences() {
             />
           </div>
 
-          {/* Stepper */}
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {steps.map((s, idx) => {
               const active = idx === currentStep;
@@ -334,10 +316,17 @@ export default function Preferences() {
           </div>
         </div>
 
+        {/* ✅ Success Message */}
+        {submitSuccess && (
+          <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-xl mb-6">
+            ✅ Preferences saved successfully! Redirecting to recommendations...
+          </div>
+        )}
+
         {/* Error */}
         {submitError && (
           <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mb-6">
-            {submitError}
+            ❌ {submitError}
           </div>
         )}
 
@@ -347,26 +336,26 @@ export default function Preferences() {
             <div className="bg-gradient-to-r from-lightBlue-500 to-indigo-500 p-8 text-white">
               <div className="flex items-center justify-between gap-6">
                 <div>
-                  <h2 className="text-3xl md:text-4xl font-extrabold text-black ">
-  <TextType
-    text={`Welcome${userName ? `, ${userName}` : ""} 👋`}
-    speed={35}
-  />
-</h2>
+                  <h2 className="text-3xl md:text-4xl font-extrabold text-black">
+                    <TextType
+                      text={`Welcome${userName ? `, ${userName}` : ""} 👋`}
+                      speed={35}
+                    />
+                  </h2>
                   <p className="mt-2 text-black/90 max-w-xl">
-                    In 2 minutes, we’ll understand your goals and interests to
+                    In 2 minutes, we'll understand your goals and interests to
                     personalize your learning journey.
                   </p>
 
                   <div className="mt-5 flex flex-wrap gap-3">
-                    <span className="bg-black /15 px-3 py-1 rounded-full text-sm">
+                    <span className="bg-black/15 px-3 py-1 rounded-full text-sm">
                       🎯 Personalized recommendations
                     </span>
-                    <span className="bg-black /15 px-3 py-1 rounded-full text-sm">
+                    <span className="bg-black/15 px-3 py-1 rounded-full text-sm">
                       ⭐ Better matching trainings
                     </span>
-                    <span className="bg-black /15 px-3 py-1 rounded-full text-sm">
-                      ⏱️ Fast & simple
+                    <span className="bg-black/15 px-3 py-1 rounded-full text-sm">
+                      ⚡ AI-powered matching
                     </span>
                   </div>
                 </div>
@@ -419,8 +408,7 @@ export default function Preferences() {
               </div>
 
               <p className="text-xs text-blueGray-400 mt-4">
-                You can update these preferences anytime from your profile /
-                settings.
+                You can update these preferences anytime from your profile.
               </p>
             </div>
           </div>
@@ -436,11 +424,14 @@ export default function Preferences() {
               Tell us about your background so we can personalize content.
             </p>
 
-            <label className="block text-sm font-semibold mb-2">Domain</label>
+            <label className="block text-sm font-semibold mb-2">
+              Domain <span className="text-red-500">*</span>
+            </label>
             <select
               value={formData.domaine}
               onChange={(e) => handleChange("domaine", e.target.value)}
               className={selectClass + " mb-4"}
+              required
             >
               <option value="">Select Domain</option>
               {domainesOptions.map((d) => (
@@ -481,16 +472,6 @@ export default function Preferences() {
               <option value="Expert">Expert</option>
             </select>
 
-            <label className="block text-sm font-semibold mb-2">
-              Date of Birth
-            </label>
-            <input
-              type="date"
-              value={formData.dateNaissance}
-              onChange={(e) => handleChange("dateNaissance", e.target.value)}
-              className={inputClass + " mb-6"}
-            />
-
             <div className="grid md:grid-cols-2 gap-6">
               <div className="p-5 rounded-2xl border border-blueGray-100 bg-blueGray-50">
                 <div className="font-bold text-blueGray-800 mb-3">
@@ -515,7 +496,7 @@ export default function Preferences() {
 
               <div className="p-5 rounded-2xl border border-blueGray-100 bg-blueGray-50">
                 <div className="font-bold text-blueGray-800 mb-3">
-                  Skills by Domain
+                  Skills to Learn
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {competancesOptions.map((c) => (
@@ -525,36 +506,13 @@ export default function Preferences() {
                     >
                       <input
                         type="checkbox"
-                        checked={formData.competanceParDomaine.includes(c)}
-                        onChange={() =>
-                          handleCheckbox("competanceParDomaine", c)
-                        }
+                        checked={formData.competanceInteret.includes(c)}
+                        onChange={() => handleCheckbox("competanceInteret", c)}
                       />
                       {c}
                     </label>
                   ))}
                 </div>
-              </div>
-            </div>
-
-            <div className="mt-6 p-5 rounded-2xl border border-blueGray-100 bg-blueGray-50">
-              <div className="font-bold text-blueGray-800 mb-3">
-                Skills to Learn
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {competancesOptions.map((c) => (
-                  <label
-                    key={c}
-                    className="flex items-center gap-2 text-sm text-blueGray-700"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.competanceInteret.includes(c)}
-                      onChange={() => handleCheckbox("competanceInteret", c)}
-                    />
-                    {c}
-                  </label>
-                ))}
               </div>
             </div>
           </div>
@@ -590,38 +548,23 @@ export default function Preferences() {
                 </select>
 
                 <label className="block text-sm font-semibold mb-2">
-                  Commitment Level
+                  Learning Style
                 </label>
-                <select
-                  value={formData.niveauEngagement}
-                  onChange={(e) =>
-                    handleChange("niveauEngagement", e.target.value)
-                  }
-                  className={selectClass + " mb-4"}
-                >
-                  <option value="">Select</option>
-                  <option value="Faible">Faible</option>
-                  <option value="Moyen">Moyen</option>
-                  <option value="Élevé">Élevé</option>
-                  <option value="Intensif">Intensif</option>
-                </select>
-
-                <label className="block text-sm font-semibold mb-2">
-                  Desired Difficulty
-                </label>
-                <select
-                  value={formData.niveauDifficulte}
-                  onChange={(e) =>
-                    handleChange("niveauDifficulte", e.target.value)
-                  }
-                  className={selectClass}
-                >
-                  <option value="">Select</option>
-                  <option value="Facile">Facile</option>
-                  <option value="Moyen">Moyen</option>
-                  <option value="Difficile">Difficile</option>
-                  <option value="Expert">Expert</option>
-                </select>
+                <div className="grid grid-cols-1 gap-2 p-4 rounded-xl bg-blueGray-50">
+                  {stylesOptions.map((s) => (
+                    <label
+                      key={s}
+                      className="flex items-center gap-2 text-sm text-blueGray-700"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.styleApprentissage.includes(s)}
+                        onChange={() => handleCheckbox("styleApprentissage", s)}
+                      />
+                      {s}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="p-5 rounded-2xl border border-blueGray-100 bg-blueGray-50">
@@ -638,25 +581,6 @@ export default function Preferences() {
                         onChange={() => handleCheckbox("besoin", b)}
                       />
                       {b}
-                    </label>
-                  ))}
-                </div>
-
-                <div className="font-bold text-blueGray-800 mt-6 mb-3">
-                  Learning Style
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {stylesOptions.map((s) => (
-                    <label
-                      key={s}
-                      className="flex items-center gap-2 text-sm text-blueGray-700"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.styleApprentissage.includes(s)}
-                        onChange={() => handleCheckbox("styleApprentissage", s)}
-                      />
-                      {s}
                     </label>
                   ))}
                 </div>
@@ -683,13 +607,13 @@ export default function Preferences() {
                   onChange={(e) => handleChange("budget", e.target.value)}
                   className={selectClass + " mb-4"}
                 >
-                  <option value="">Select</option>
-                  <option value="Gratuit">Gratuit</option>
-                  <option value="Moins de 50€">Moins de 50€</option>
-                  <option value="50-100€">50-100€</option>
-                  <option value="100-300€">100-300€</option>
-                  <option value="300€+">300€+</option>
-                  <option value="Illimité">Illimité</option>
+                  <option value="">Select Budget</option>
+                  <option value="Gratuit">🎁 Gratuit</option>
+                  <option value="Moins de 50€">💰 Moins de 50€</option>
+                  <option value="50-100€">💰 50-100€</option>
+                  <option value="100-300€">💰 100-300€</option>
+                  <option value="300€+">💰 300€+</option>
+                  <option value="Illimité">💎 Illimité</option>
                 </select>
 
                 <label className="block text-sm font-semibold mb-2">
@@ -700,21 +624,21 @@ export default function Preferences() {
                   onChange={(e) => handleChange("etat", e.target.value)}
                   className={selectClass}
                 >
-                  <option value="">Select</option>
-                  <option value="Étudiant">Étudiant</option>
-                  <option value="Employé">Employé</option>
-                  <option value="Freelance">Freelance</option>
-                  <option value="En recherche">En recherche</option>
-                  <option value="Entrepreneur">Entrepreneur</option>
-                  <option value="En reconversion">En reconversion</option>
+                  <option value="">Select Status</option>
+                  <option value="Étudiant">📚 Étudiant</option>
+                  <option value="Employé">💼 Employé</option>
+                  <option value="Freelance">💻 Freelance</option>
+                  <option value="En recherche">🔍 En recherche</option>
+                  <option value="Entrepreneur">🚀 Entrepreneur</option>
+                  <option value="En reconversion">🔄 En reconversion</option>
                 </select>
               </div>
 
               <div className="p-5 rounded-2xl border border-blueGray-100 bg-blueGray-50">
                 <div className="font-bold text-blueGray-800 mb-3">
-                  Available Days
+                  Available Days 📅
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {joursOptions.map((j) => (
                     <button
                       key={j}
@@ -726,10 +650,13 @@ export default function Preferences() {
                           : "bg-white border-blueGray-200 text-blueGray-700 hover:bg-blueGray-100"
                       }`}
                     >
-                      {j}
+                      {j.substring(0, 3)}
                     </button>
                   ))}
                 </div>
+                <p className="text-xs text-blueGray-400 mt-3">
+                  Select days you're available for training
+                </p>
               </div>
             </div>
           </div>
@@ -773,7 +700,17 @@ export default function Preferences() {
                     : "bg-green-500 hover:bg-green-600"
                 }`}
               >
-                {isSubmitting ? "Saving..." : "Save Preferences"}
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </span>
+                ) : (
+                  "Save & Get Recommendations 🎯"
+                )}
               </button>
             )}
           </div>

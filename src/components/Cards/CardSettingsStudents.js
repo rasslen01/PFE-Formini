@@ -1,68 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
-import { updateUser } from "Services/ApiUser";
+import { updateUser, changePassword } from "Services/ApiUser";
 
 // ======== Skills list ========
 const SKILLS_LIST = [
-  "React.js",
-  "React Native",
-  "Redux",
-  "Next.js",
-  "Vue.js",
-  "Angular",
-  "JavaScript",
-  "TypeScript",
-  "HTML5",
-  "CSS3",
-  "Tailwind CSS",
-  "Bootstrap",
-  "Node.js",
-  "Express.js",
-  "NestJS",
-  "GraphQL",
-  "REST API",
-  "Python",
-  "Django",
-  "Flask",
-  "FastAPI",
-  "Java",
-  "Spring Boot",
-  "PHP",
-  "Laravel",
-  "MySQL",
-  "PostgreSQL",
-  "MongoDB",
-  "Firebase",
-  "Redis",
-  "Docker",
-  "Kubernetes",
-  "AWS",
-  "Azure",
-  "Google Cloud",
-  "Git",
-  "GitHub",
-  "GitLab",
-  "CI/CD",
-  "Linux",
-  "Figma",
-  "Adobe XD",
-  "UI/UX Design",
-  "Photoshop",
-  "Machine Learning",
-  "Deep Learning",
-  "TensorFlow",
-  "PyTorch",
-  "Agile",
-  "Scrum",
-  "Jira",
-  "Project Management",
+  "React.js", "React Native", "Redux", "Next.js", "Vue.js", "Angular",
+  "JavaScript", "TypeScript", "HTML5", "CSS3", "Tailwind CSS", "Bootstrap",
+  "Node.js", "Express.js", "NestJS", "GraphQL", "REST API", "Python",
+  "Django", "Flask", "FastAPI", "Java", "Spring Boot", "PHP", "Laravel",
+  "MySQL", "PostgreSQL", "MongoDB", "Firebase", "Redis", "Docker",
+  "Kubernetes", "AWS", "Azure", "Google Cloud", "Git", "GitHub", "GitLab",
+  "CI/CD", "Linux", "Figma", "Adobe XD", "UI/UX Design", "Photoshop",
+  "Machine Learning", "Deep Learning", "TensorFlow", "PyTorch", "Agile",
+  "Scrum", "Jira", "Project Management",
 ];
 
 const safeParse = (v) => {
-  try {
-    return JSON.parse(v);
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(v); } catch { return null; }
 };
 
 const buildExtraKey = (userId) => `profile_extra_${userId}`;
@@ -72,45 +25,34 @@ export default function CardSettingsStudents() {
   const saveTimerRef = useRef(null);
   const blurTimerRef = useRef(null);
 
-  const [user, setUser] = useState(null);
-
-  const [loading, setLoading] = useState(false);
+  const [user, setUser]           = useState(null);
+  const [loading, setLoading]     = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState("");
-
   const [avatarPreview, setAvatarPreview] = useState(null);
 
-  // Password (UI only)
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  // Password
+  const [oldPassword, setOldPassword]       = useState("");
+  const [newPassword, setNewPassword]       = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showOld, setShowOld] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
+  const [showOld, setShowOld]               = useState(false);
+  const [showNew, setShowNew]               = useState(false);
+  const [showConfirm, setShowConfirm]       = useState(false);
+  const [passwordError, setPasswordError]   = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   // Skills UI
-  const [skillInput, setSkillInput] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
+  const [skillInput, setSkillInput]         = useState("");
+  const [suggestions, setSuggestions]       = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
 
   // Profile editable
   const [profile, setProfile] = useState({
-    username: "",
-    email: "",
-    firstName: "",
-    lastName: "",
-    address: "",
-    city: "",
-    country: "",
-    postalCode: "",
-    about: "",
-    skills: [],
-    avatar: null,
-    badges: [],
-    xp: 0,
+    username: "", email: "", firstName: "", lastName: "",
+    address: "", city: "", country: "", postalCode: "",
+    about: "", skills: [], avatar: null, badges: [], xp: 0,
     formationsParticipees: 0,
   });
 
@@ -126,11 +68,9 @@ export default function CardSettingsStudents() {
     };
   }, []);
 
-  // ─────────────────────────────────────────
-  // Load user + load profile data
-  // ─────────────────────────────────────────
+  // ─── Load user + profile data ───────────────────────────
   useEffect(() => {
-    const storedUser = safeParse(localStorage.getItem("user"));
+    const storedUser          = safeParse(localStorage.getItem("user"));
     const savedStudentProfile = safeParse(localStorage.getItem("studentProfile"));
 
     setUser(storedUser);
@@ -140,80 +80,45 @@ export default function CardSettingsStudents() {
       return;
     }
 
-    const fullName = storedUser.name || "";
-    const parts = fullName.trim().split(" ");
+    const fullName          = storedUser.name || "";
+    const parts             = fullName.trim().split(" ");
     const firstNameFromName = parts[0] || "";
-    const lastNameFromName = parts.slice(1).join(" ") || "";
+    const lastNameFromName  = parts.slice(1).join(" ") || "";
 
     const extraKey = buildExtraKey(storedUser._id);
-    const extras = safeParse(localStorage.getItem(extraKey)) || {};
+    const extras   = safeParse(localStorage.getItem(extraKey)) || {};
 
     const initial = {
       username:
-        savedStudentProfile?.username ??
-        extras.username ??
-        storedUser.username ??
-        storedUser.email?.split("@")[0] ??
-        "",
+        savedStudentProfile?.username ?? extras.username ??
+        storedUser.username ?? storedUser.email?.split("@")[0] ?? "",
       email: storedUser.email ?? "",
       firstName:
-        savedStudentProfile?.firstName ??
-        extras.firstName ??
-        storedUser.firstName ??
-        firstNameFromName,
+        savedStudentProfile?.firstName ?? extras.firstName ??
+        storedUser.firstName ?? firstNameFromName,
       lastName:
-        savedStudentProfile?.lastName ??
-        extras.lastName ??
-        storedUser.lastName ??
-        lastNameFromName,
+        savedStudentProfile?.lastName ?? extras.lastName ??
+        storedUser.lastName ?? lastNameFromName,
       address:
-        savedStudentProfile?.address ??
-        extras.address ??
-        storedUser.address ??
-        "",
+        savedStudentProfile?.address ?? extras.address ?? storedUser.address ?? "",
       city:
-        savedStudentProfile?.city ??
-        extras.city ??
-        storedUser.city ??
-        "",
+        savedStudentProfile?.city ?? extras.city ?? storedUser.city ?? "",
       country:
-        savedStudentProfile?.country ??
-        extras.country ??
-        storedUser.country ??
-        "",
+        savedStudentProfile?.country ?? extras.country ?? storedUser.country ?? "",
       postalCode:
-        savedStudentProfile?.postalCode ??
-        extras.postalCode ??
-        storedUser.postalCode ??
-        "",
+        savedStudentProfile?.postalCode ?? extras.postalCode ?? storedUser.postalCode ?? "",
       about:
-        savedStudentProfile?.about ??
-        extras.about ??
-        storedUser.about ??
-        "",
+        savedStudentProfile?.about ?? extras.about ?? storedUser.about ?? "",
       skills:
-        savedStudentProfile?.skills ??
-        extras.skills ??
-        storedUser.skills ??
-        [],
+        savedStudentProfile?.skills ?? extras.skills ?? storedUser.skills ?? [],
       avatar:
-        savedStudentProfile?.avatar ??
-        extras.avatar ??
-        null,
+        savedStudentProfile?.avatar ?? extras.avatar ?? null,
       badges:
-        savedStudentProfile?.badges ??
-        extras.badges ??
-        storedUser.badges ??
-        [],
+        savedStudentProfile?.badges ?? extras.badges ?? storedUser.badges ?? [],
       xp:
-        savedStudentProfile?.xp ??
-        extras.xp ??
-        storedUser.xp ??
-        0,
+        savedStudentProfile?.xp ?? extras.xp ?? storedUser.xp ?? 0,
       formationsParticipees:
-        savedStudentProfile?.formationsParticipees ??
-        extras.formationsParticipees ??
-        0,
+        savedStudentProfile?.formationsParticipees ?? extras.formationsParticipees ?? 0,
     };
 
     setProfile(initial);
@@ -231,16 +136,14 @@ export default function CardSettingsStudents() {
     }
   }, []);
 
-  // ── Avatar handler
+  // ─── Avatar ─────────────────────────────────────────────
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.size > 2 * 1024 * 1024) {
       alert("L'image ne doit pas dépasser 2 Mo.");
       return;
     }
-
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64 = reader.result;
@@ -256,42 +159,30 @@ export default function CardSettingsStudents() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // ─────────────────────────────────────────
-  // Save profile
-  // ─────────────────────────────────────────
+  // ─── Save profile ────────────────────────────────────────
   const handleSave = async () => {
     setSaveError("");
     setSaveSuccess(false);
 
     const token = localStorage.getItem("token");
-    if (!token) {
-      setSaveError("Vous devez vous connecter (token manquant).");
-      return;
-    }
-
-    if (!user?._id) {
-      setSaveError("Utilisateur introuvable. Reconnectez-vous.");
-      return;
-    }
+    if (!token) { setSaveError("Vous devez vous connecter (token manquant)."); return; }
+    if (!user?._id) { setSaveError("Utilisateur introuvable. Reconnectez-vous."); return; }
 
     setLoading(true);
-
     try {
       const payloadBackend = {
-        name: `${profile.firstName} ${profile.lastName}`.trim(),
+        name:  `${profile.firstName} ${profile.lastName}`.trim(),
         email: profile.email,
       };
 
       const res = await updateUser(user._id, payloadBackend);
-
-      const updatedUser = res?.data?.user
-        ? res.data.user
-        : { ...user, ...payloadBackend };
+      const updatedUser = res?.data?.user ? res.data.user : { ...user, ...payloadBackend };
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
       setUser(updatedUser);
 
       const extraData = {
+        _userId: user._id,
         username: profile.username,
         firstName: profile.firstName,
         lastName: profile.lastName,
@@ -307,61 +198,47 @@ export default function CardSettingsStudents() {
         formationsParticipees: profile.formationsParticipees || 0,
       };
 
-      const extraKey = buildExtraKey(user._id);
-      localStorage.setItem(extraKey, JSON.stringify(extraData));
-
-      // ✅ clé utilisée par Profile
-      localStorage.setItem(
-        "studentProfile",
-        JSON.stringify({
-          username: profile.username,
-          email: profile.email,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          address: profile.address,
-          city: profile.city,
-          country: profile.country,
-          postalCode: profile.postalCode,
-          about: profile.about,
-          skills: profile.skills,
-          avatar: profile.avatar,
-          badges: profile.badges || [],
-          xp: profile.xp || 0,
-          formationsParticipees: profile.formationsParticipees || 0,
-        })
-      );
+      localStorage.setItem(buildExtraKey(user._id), JSON.stringify(extraData));
+      localStorage.setItem("studentProfile", JSON.stringify({
+        username: profile.username, email: profile.email,
+        firstName: profile.firstName, lastName: profile.lastName,
+        address: profile.address, city: profile.city,
+        country: profile.country, postalCode: profile.postalCode,
+        about: profile.about, skills: profile.skills,
+        avatar: profile.avatar, badges: profile.badges || [],
+        xp: profile.xp || 0, formationsParticipees: profile.formationsParticipees || 0,
+      }));
 
       setSaveSuccess(true);
-
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => setSaveSuccess(false), 2500);
     } catch (err) {
       console.error("SAVE PROFILE ERROR:", err);
       setSaveError(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Erreur lors de la sauvegarde."
+        err.response?.data?.error || err.response?.data?.message || "Erreur lors de la sauvegarde."
       );
     } finally {
       setLoading(false);
     }
   };
 
+  // ─── Password strength ───────────────────────────────────
   const getPasswordStrength = (pwd) => {
     if (!pwd) return { level: 0, label: "", color: "" };
     let score = 0;
-    if (pwd.length >= 8) score++;
-    if (/[A-Z]/.test(pwd)) score++;
-    if (/[0-9]/.test(pwd)) score++;
+    if (pwd.length >= 8)          score++;
+    if (/[A-Z]/.test(pwd))        score++;
+    if (/[0-9]/.test(pwd))        score++;
     if (/[^A-Za-z0-9]/.test(pwd)) score++;
     if (score <= 1) return { level: 1, label: "Faible", color: "bg-red-400" };
-    if (score === 2) return { level: 2, label: "Moyen", color: "bg-yellow-400" };
-    if (score === 3) return { level: 3, label: "Bien", color: "bg-blue-400" };
-    return { level: 4, label: "Fort", color: "bg-green-500" };
+    if (score === 2) return { level: 2, label: "Moyen",  color: "bg-yellow-400" };
+    if (score === 3) return { level: 3, label: "Bien",   color: "bg-blue-400" };
+    return              { level: 4, label: "Fort",   color: "bg-green-500" };
   };
 
   const strength = getPasswordStrength(newPassword);
 
+  // ─── Change password (branché sur l'API) ─────────────────
   const handlePasswordSave = async () => {
     setPasswordError("");
     setPasswordSuccess("");
@@ -370,37 +247,43 @@ export default function CardSettingsStudents() {
       setPasswordError("Veuillez remplir tous les champs.");
       return;
     }
-
     if (newPassword.length < 8) {
-      setPasswordError(
-        "Le nouveau mot de passe doit contenir au moins 8 caractères."
-      );
+      setPasswordError("Le nouveau mot de passe doit contenir au moins 8 caractères.");
       return;
     }
-
     if (newPassword !== confirmPassword) {
       setPasswordError("Les mots de passe ne correspondent pas.");
       return;
     }
+    if (!user?._id) {
+      setPasswordError("Utilisateur introuvable. Reconnectez-vous.");
+      return;
+    }
 
-    setPasswordSuccess(
-      "OK (UI). Ajoute une route backend pour changer le mot de passe."
-    );
-    setOldPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    setPasswordLoading(true);
+    try {
+      await changePassword(user._id, oldPassword, newPassword);
+      setPasswordSuccess("✅ Mot de passe mis à jour avec succès !");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setPasswordError(
+        err.response?.data?.error || "Erreur lors du changement de mot de passe."
+      );
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
+  // ─── Skills ──────────────────────────────────────────────
   const handleSkillInput = (e) => {
     const val = e.target.value;
     setSkillInput(val);
     setActiveSuggestion(0);
-
     if (val.trim().length > 0) {
       const filtered = SKILLS_LIST.filter(
-        (s) =>
-          s.toLowerCase().includes(val.toLowerCase()) &&
-          !profile.skills.includes(s)
+        (s) => s.toLowerCase().includes(val.toLowerCase()) && !profile.skills.includes(s)
       );
       setSuggestions(filtered.slice(0, 8));
       setShowSuggestions(true);
@@ -411,19 +294,14 @@ export default function CardSettingsStudents() {
   };
 
   const addSkill = (skill) => {
-    if (!profile.skills.includes(skill)) {
-      handleChange("skills", [...profile.skills, skill]);
-    }
+    if (!profile.skills.includes(skill)) handleChange("skills", [...profile.skills, skill]);
     setSkillInput("");
     setSuggestions([]);
     setShowSuggestions(false);
   };
 
   const removeSkill = (skill) => {
-    handleChange(
-      "skills",
-      profile.skills.filter((s) => s !== skill)
-    );
+    handleChange("skills", profile.skills.filter((s) => s !== skill));
   };
 
   const handleSkillKeyDown = (e) => {
@@ -433,16 +311,14 @@ export default function CardSettingsStudents() {
       setActiveSuggestion((p) => Math.max(p - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (suggestions[activeSuggestion]) {
-        addSkill(suggestions[activeSuggestion]);
-      } else if (skillInput.trim()) {
-        addSkill(skillInput.trim());
-      }
+      if (suggestions[activeSuggestion]) addSkill(suggestions[activeSuggestion]);
+      else if (skillInput.trim()) addSkill(skillInput.trim());
     } else if (e.key === "Escape") {
       setShowSuggestions(false);
     }
   };
 
+  // ─── EyeIcon ─────────────────────────────────────────────
   const EyeIcon = ({ show, toggle }) => (
     <button
       type="button"
@@ -455,26 +331,23 @@ export default function CardSettingsStudents() {
   );
 
   const fallbackAvatar = require("assets/img/team-2-800x800.jpg").default;
-  const avatarSrc = avatarPreview || fallbackAvatar;
+  const avatarSrc      = avatarPreview || fallbackAvatar;
 
+  // ─── Render ──────────────────────────────────────────────
   return (
     <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
+
+      {/* Header */}
       <div className="rounded-t bg-white mb-0 px-6 py-6">
         <div className="text-center flex justify-between items-center">
           <h6 className="text-blueGray-700 text-xl font-bold">Mon compte</h6>
-
           <div className="flex items-center gap-3">
             {saveSuccess && (
-              <span className="text-green-500 text-xs font-semibold">
-                ✓ Sauvegardé !
-              </span>
+              <span className="text-green-500 text-xs font-semibold">✓ Sauvegardé !</span>
             )}
             {saveError && (
-              <span className="text-red-500 text-xs font-semibold">
-                {saveError}
-              </span>
+              <span className="text-red-500 text-xs font-semibold">{saveError}</span>
             )}
-
             <button
               onClick={handleSave}
               disabled={loading}
@@ -491,10 +364,11 @@ export default function CardSettingsStudents() {
 
       <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
         <form>
+
+          {/* ── Photo de profil ── */}
           <h6 className="text-blueGray-400 text-sm mt-6 mb-6 font-bold uppercase">
             Photo de profil
           </h6>
-
           <div className="flex flex-wrap px-4 mb-6">
             <div className="flex items-center gap-6">
               <div className="relative">
@@ -513,7 +387,6 @@ export default function CardSettingsStudents() {
                   📷
                 </button>
               </div>
-
               <div>
                 <input
                   ref={fileInputRef}
@@ -522,7 +395,6 @@ export default function CardSettingsStudents() {
                   className="hidden"
                   onChange={handleAvatarChange}
                 />
-
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -530,7 +402,6 @@ export default function CardSettingsStudents() {
                 >
                   Choisir une image
                 </button>
-
                 {(avatarPreview || profile.avatar) && (
                   <button
                     type="button"
@@ -540,20 +411,17 @@ export default function CardSettingsStudents() {
                     🗑 Supprimer la photo
                   </button>
                 )}
-
-                <p className="text-xs text-blueGray-400 mt-1">
-                  JPG, PNG — Max 2 Mo
-                </p>
+                <p className="text-xs text-blueGray-400 mt-1">JPG, PNG — Max 2 Mo</p>
               </div>
             </div>
           </div>
 
           <hr className="mt-2 border-b-1 border-blueGray-300" />
 
+          {/* ── Informations personnelles ── */}
           <h6 className="text-blueGray-400 text-sm mt-6 mb-6 font-bold uppercase">
             Informations personnelles
           </h6>
-
           <div className="flex flex-wrap">
             <div className="w-full lg:w-6/12 px-4">
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
@@ -566,7 +434,6 @@ export default function CardSettingsStudents() {
                 onChange={(e) => handleChange("username", e.target.value)}
               />
             </div>
-
             <div className="w-full lg:w-6/12 px-4">
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                 Email
@@ -578,7 +445,6 @@ export default function CardSettingsStudents() {
                 onChange={(e) => handleChange("email", e.target.value)}
               />
             </div>
-
             <div className="w-full lg:w-6/12 px-4 mt-3">
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                 Prénom
@@ -590,7 +456,6 @@ export default function CardSettingsStudents() {
                 onChange={(e) => handleChange("firstName", e.target.value)}
               />
             </div>
-
             <div className="w-full lg:w-6/12 px-4 mt-3">
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                 Nom
@@ -606,10 +471,10 @@ export default function CardSettingsStudents() {
 
           <hr className="mt-6 border-b-1 border-blueGray-300" />
 
+          {/* ── Informations de contact ── */}
           <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
             Informations de contact
           </h6>
-
           <div className="flex flex-wrap">
             <div className="w-full px-4">
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
@@ -622,7 +487,6 @@ export default function CardSettingsStudents() {
                 onChange={(e) => handleChange("address", e.target.value)}
               />
             </div>
-
             <div className="w-full lg:w-4/12 px-4 mt-3">
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                 Ville
@@ -634,7 +498,6 @@ export default function CardSettingsStudents() {
                 onChange={(e) => handleChange("city", e.target.value)}
               />
             </div>
-
             <div className="w-full lg:w-4/12 px-4 mt-3">
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                 Pays
@@ -646,7 +509,6 @@ export default function CardSettingsStudents() {
                 onChange={(e) => handleChange("country", e.target.value)}
               />
             </div>
-
             <div className="w-full lg:w-4/12 px-4 mt-3">
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                 Code Postal
@@ -662,10 +524,10 @@ export default function CardSettingsStudents() {
 
           <hr className="mt-6 border-b-1 border-blueGray-300" />
 
+          {/* ── À propos ── */}
           <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
             À propos de moi
           </h6>
-
           <div className="w-full px-4">
             <textarea
               className="border-0 px-3 py-3 bg-white rounded text-sm shadow w-full"
@@ -677,10 +539,10 @@ export default function CardSettingsStudents() {
 
           <hr className="mt-6 border-b-1 border-blueGray-300" />
 
+          {/* ── Compétences ── */}
           <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
             Compétences
           </h6>
-
           <div className="w-full px-4">
             <div className="flex flex-wrap gap-2 mb-3">
               {profile.skills.map((skill) => (
@@ -693,13 +555,10 @@ export default function CardSettingsStudents() {
                     type="button"
                     onClick={() => removeSkill(skill)}
                     className="ml-1 text-lightBlue-400 hover:text-red-500"
-                  >
-                    ×
-                  </button>
+                  >×</button>
                 </span>
               ))}
             </div>
-
             <div className="relative w-full mb-3">
               <input
                 type="text"
@@ -708,16 +567,12 @@ export default function CardSettingsStudents() {
                 onKeyDown={handleSkillKeyDown}
                 onBlur={() => {
                   if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-                  blurTimerRef.current = setTimeout(
-                    () => setShowSuggestions(false),
-                    150
-                  );
+                  blurTimerRef.current = setTimeout(() => setShowSuggestions(false), 150);
                 }}
                 onFocus={() => skillInput && setShowSuggestions(true)}
                 placeholder="Ajouter une compétence (ex: React, Python…)"
                 className="border-0 px-3 py-3 bg-white rounded text-sm shadow w-full"
               />
-
               {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-xl border border-blueGray-100 overflow-hidden">
                   {suggestions.map((s, i) => (
@@ -737,65 +592,77 @@ export default function CardSettingsStudents() {
                   ))}
                 </div>
               )}
-
-              <p className="text-xs text-blueGray-400 mt-1">
-                ↑↓ naviguer, Entrée sélectionner.
-              </p>
+              <p className="text-xs text-blueGray-400 mt-1">↑↓ naviguer, Entrée sélectionner.</p>
             </div>
           </div>
 
           <hr className="mt-6 border-b-1 border-blueGray-300" />
 
+          {/* ── Changer le mot de passe ── */}
           <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
             Changer le mot de passe
           </h6>
 
           {passwordError && (
-            <p className="text-red-500 text-sm px-4 mb-2">{passwordError}</p>
+            <div className="mx-4 mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+              <span className="text-red-500 text-sm">⚠️</span>
+              <p className="text-red-600 text-sm font-medium">{passwordError}</p>
+            </div>
           )}
           {passwordSuccess && (
-            <p className="text-green-500 text-sm px-4 mb-2">
-              {passwordSuccess}
-            </p>
+            <div className="mx-4 mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+              <span className="text-green-500 text-sm">✅</span>
+              <p className="text-green-700 text-sm font-medium">{passwordSuccess}</p>
+            </div>
           )}
 
           <div className="flex flex-wrap">
+            {/* Ancien mot de passe */}
             <div className="w-full lg:w-4/12 px-4">
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                Ancien
+                Ancien mot de passe
               </label>
               <div className="relative">
                 <input
                   type={showOld ? "text" : "password"}
                   value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  className="border-0 px-3 py-3 pr-10 bg-white rounded text-sm shadow w-full"
+                  onChange={(e) => {
+                    setOldPassword(e.target.value);
+                    if (passwordError) setPasswordError("");
+                  }}
+                  placeholder="••••••••"
+                  className="border-0 px-3 py-3 pr-10 bg-white rounded text-sm shadow w-full focus:ring-2 focus:ring-lightBlue-300 outline-none"
                 />
                 <EyeIcon show={showOld} toggle={() => setShowOld(!showOld)} />
               </div>
             </div>
 
+            {/* Nouveau mot de passe */}
             <div className="w-full lg:w-4/12 px-4">
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                Nouveau
+                Nouveau mot de passe
               </label>
               <div className="relative">
                 <input
                   type={showNew ? "text" : "password"}
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="border-0 px-3 py-3 pr-10 bg-white rounded text-sm shadow w-full"
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    if (passwordError) setPasswordError("");
+                  }}
+                  placeholder="••••••••"
+                  className="border-0 px-3 py-3 pr-10 bg-white rounded text-sm shadow w-full focus:ring-2 focus:ring-lightBlue-300 outline-none"
                 />
                 <EyeIcon show={showNew} toggle={() => setShowNew(!showNew)} />
               </div>
-
+              {/* Barre de force */}
               {newPassword && (
                 <div className="mt-2">
                   <div className="flex gap-1 mb-1">
                     {[1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
-                        className={`h-1 flex-1 rounded-full ${
+                        className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
                           i <= strength.level ? strength.color : "bg-blueGray-200"
                         }`}
                       />
@@ -808,35 +675,64 @@ export default function CardSettingsStudents() {
               )}
             </div>
 
+            {/* Confirmer */}
             <div className="w-full lg:w-4/12 px-4">
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                Confirmer
+                Confirmer le mot de passe
               </label>
               <div className="relative">
                 <input
                   type={showConfirm ? "text" : "password"}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="border-0 px-3 py-3 pr-10 bg-white rounded text-sm shadow w-full"
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (passwordError) setPasswordError("");
+                  }}
+                  placeholder="••••••••"
+                  className={`border-0 px-3 py-3 pr-10 bg-white rounded text-sm shadow w-full focus:ring-2 outline-none ${
+                    confirmPassword && confirmPassword !== newPassword
+                      ? "ring-2 ring-red-300 focus:ring-red-300"
+                      : confirmPassword && confirmPassword === newPassword
+                      ? "ring-2 ring-green-300 focus:ring-green-300"
+                      : "focus:ring-lightBlue-300"
+                  }`}
                 />
-                <EyeIcon
-                  show={showConfirm}
-                  toggle={() => setShowConfirm(!showConfirm)}
-                />
+                <EyeIcon show={showConfirm} toggle={() => setShowConfirm(!showConfirm)} />
               </div>
+              {/* Indicateur de correspondance */}
+              {confirmPassword && (
+                <p className={`text-xs mt-1 ${
+                  confirmPassword === newPassword ? "text-green-500" : "text-red-400"
+                }`}>
+                  {confirmPassword === newPassword ? "✓ Les mots de passe correspondent" : "✗ Ne correspondent pas"}
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="flex justify-end px-4 mt-4">
+          <div className="flex justify-end px-4 mt-6">
             <button
               type="button"
               onClick={handlePasswordSave}
-              disabled={loading}
-              className="bg-blueGray-700 text-white font-bold uppercase text-xs px-6 py-2 rounded shadow hover:shadow-md"
+              disabled={passwordLoading}
+              className={`flex items-center gap-2 bg-blueGray-700 text-white font-bold uppercase text-xs px-6 py-3 rounded shadow hover:bg-blueGray-800 hover:shadow-md transition-all ${
+                passwordLoading ? "opacity-60 cursor-not-allowed" : ""
+              }`}
             >
-              Mettre à jour le mot de passe
+              {passwordLoading ? (
+                <>
+                  <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Mise à jour...
+                </>
+              ) : (
+                <>🔒 Mettre à jour le mot de passe</>
+              )}
             </button>
           </div>
+
         </form>
       </div>
     </div>
